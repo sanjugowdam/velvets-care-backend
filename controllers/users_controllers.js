@@ -109,7 +109,7 @@ const verify_otp = async (req, res) => {
         }
         const refresh_token = await JWTFunctions.generateToken(payload, '1d');
         const access_token = await JWTFunctions.generateToken(payload, '30d');
-        await user.update({
+        await Users.update({
             access_token: access_token,
             refresh_token: refresh_token
         }, {
