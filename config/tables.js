@@ -1,5 +1,7 @@
 module.exports = {
+    Otps: 'otps',
     Users: 'users',
+    Files: 'files',
     Admins: 'admins',
     Scans: 'scans',
     UserScans: 'user_scans',

@@ -12,18 +12,13 @@ const {
 class UsersModel extends Model {}
 UsersModel.init({
   name: DataTypes.STRING,
-  email: DataTypes.STRING,
   phone: DataTypes.STRING,
+  gender: DataTypes.STRING,
+  otp_id: DataTypes.INTEGER,
   access_token: DataTypes.STRING,
   refresh_token: DataTypes.STRING,
-  banned: DataTypes.BOOLEAN,
-  verified: DataTypes.BOOLEAN,
-  otp: DataTypes.STRING,
-  otp_time: DataTypes.STRING,
-  avatar_file_name: DataTypes.STRING,
-  avatar_file_url: DataTypes.STRING,
-  avatar_file_extension: DataTypes.STRING,
-  avatar_file_size: DataTypes.STRING
+  distance_preference: DataTypes.STRING,
+  profile_image_id: DataTypes.INTEGER,
 }, {
   sequelize,
   paranoid: true,

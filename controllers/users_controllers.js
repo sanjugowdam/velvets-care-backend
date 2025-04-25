@@ -1,5 +1,6 @@
 const {
-    Users
+    Users,
+    Otps
 } = require('../models')
 const {
     Op
@@ -8,202 +9,154 @@ const {
     OTPFunctions, JWTFunctions
 } = require('../helpers')
 
-const list_users = async (req, res) => {
+const { sendOtpViaTwilio } = require('../helpers/twilio')
+
+const request_otp = async (req, res) => {
     try {
-        const {
-            page,   // Can be null
-            limit,  // Can be null
-            sort_by,    // Can be null
-            order,  // Can be null
-            search, // Can be null
-        } = req.query
-        const filter = {
-            where: {}
-        }
-        if (search) filter.where[Op.or] = [
-            {
-                name: {
-                    [Op.like]: `%${search}%`
-                }
-            },
-            {
-                phone: {
-                    [Op.like]: `%${search}%`
-                }
-            },
-            {
-                email: {
-                    [Op.like]: `%${search}%`
-                }
-            }
-        ]
-        if (sort_by && order) filter.order = [[sort_by, order]]
-        if (limit) filter.limit = limit
-        if (page) filter.offset = (page - 1) * limit
 
-        const users = await Users.findAll({
-            ...filter,
-            raw: true,
-            attributes: [
-                'id',
-                'name',
-                'email',
-                'phone',
-                'avatar_file_name',
-                'avatar_file_url',
-                'avatar_file_extension',
-                'avatar_file_size',
-                'verified',
-                'banned',
-            ]
+        const { phone } = req.payload;
+        const user = await Users.findOne({
+            where: {
+                phone: phone
+            },
+            raw: true
         })
-
+        const otp = await OTPFunctions.getOTPByLength(4);
+        if (!user) {
+            const otpCode = await Otps.create({
+                otp: otp,
+                otp_time: Date.now()
+            })
+            await sendOtpViaTwilio(phone, otpCode.otp);
+            await Users.create({
+                phone: phone,
+                otp_id: otpCode.id
+            })
+            return res.response({
+                success: true,
+                message: 'OTP sent successfully',
+            })
+        }
+        const otpCode = await Otps.create({
+            otp: otp,
+            otp_time: Date.now()
+        })
+        await sendOtpViaTwilio(phone, otpCode.otp);
+        await Users.update({
+            otp_id: otpCode.id
+        }, {
+            where: {
+                id: user.id
+            }
+        })
         return res.response({
             success: true,
-            message: 'Users list fetched successfully',
-            data: users
-        }).code(200);
-    } catch (error) {
-        console.log('users_controllers.js @ Line 9:', error);
+            message: 'OTP sent successfully',
+        })
+    }
+    catch (error) {
+        console.log(error);
         return res.response({
-            success: false,
+            success: true,
             message: error.message,
-        }).code(200);
+        })
+
     }
 }
-
-const register_and_login_by_otp = async (req, res) => {
+const verify_otp = async (req, res) => {
     try {
-        const {
-            name,
-            phone,
-        } = req.payload
-        const available_user = await Users.findOne({
+        const { phone, otp } = req.payload;
+        const user = await Users.findOne({
             where: {
-                phone,
-                name,
-                banned: false
+                phone: phone
             },
             raw: true
         })
-
-        const otp = OTPFunctions.getOTPByLength(7)
-        console.log('users_controllers.js @ Line 77:', otp);
-        if (!available_user) {
-            await Users.create({
-                name,
-                phone,
-                otp,
-                otp_time: new Date().getTime(),
-                verified: false,
-                banned: false
-            })
-            return res.response({
-                success: true,
-                message: 'OTP Sent successfully',
-            }).code(200);
-        } else {
-            await Users.update({
-                otp,
-                otp_time: new Date().getTime(),
-                verified: false,
-                access_token: null,
-                refresh_token: null
-            }, {
-                where: {
-                    id: available_user.id
-                }
-            })
-            return res.response({
-                success: true,
-                message: 'OTP Sent successfully',
-            }).code(200);
-        }
-    } catch (error) {
-        return res.response({
-            success: false,
-            message: error.message,
-        }).code(200);
-    }
-}
-const register_and_login_verify_otp = async (req, res) => {
-    try {
-        const {
-            name,
-            phone,
-        } = req.payload
-        const available_user = await Users.findOne({
-            where: {
-                phone,
-                name,
-            },
-            raw: true
-        })
-
-        if (!available_user) {
+        if (!user) {
             return res.response({
                 success: false,
                 message: 'User not found',
-            }).code(200);
-        } else if (available_user.banned) {
+            })
+        }
+        const otpCode = await Otps.findOne({
+            where: {
+                id: user.otp_id
+            },
+            raw: true
+        })
+        const otpTime = new Date(otpCode.otp_time);
+        const currentTime = new Date();
+
+        // Check if OTP is older than 10 minutes
+        const diffInMinutes = (currentTime - otpTime) / 1000 / 60;
+
+        if (diffInMinutes > 10) {
             return res.response({
                 success: false,
-                message: 'You are banned from using the application.',
-            }).code(200);
-        } else {
-            const now = new Date().getTime();
-            const savedTimestamp = Number(available_user.otp_time);
-            const secondsPassed = Math.floor((now - savedTimestamp) / 1000);
-            if (secondsPassed < 600) {
-                if (available_user.otp == req.payload.otp) {
-                    const user_data = {
-                        id: available_user.id,
-                        name: available_user.name,
-                        phone: available_user.phone,
-                        banned: available_user.banned,
-                        verified: available_user.verified,
-                        email: available_user.email,
-                        avatar_file_name: available_user.avatar_file_name,
-                        avatar_file_url: available_user.avatar_file_url,
-                        avatar_file_extension: available_user.avatar_file_extension,
-                        avatar_file_size: available_user.avatar_file_size,
-                    }
-                    const access_token = JWTFunctions.generateToken(user_data, '1d')
-                    const refresh_token = JWTFunctions.generateToken(user_data, '7d')
-                    await Users.update({
-                        access_token,
-                        refresh_token,
-                        otp: null,
-                        otp_time: null,
-                        verified: true
-                    }, {
-                        where: {
-                            id: available_user.id
-                        }
-                    })
-                    return res.response({
-                        success: true,
-                        message: 'OTP verified successfully',
-                        data: {
-                            user: user_data,
-                            access_token,
-                            refresh_token
-                        }
-                    }).code(200);
-                } else {
-                    return res.response({
-                        success: false,
-                        message: 'Invalid OTP',
-                    }).code(200);
-                }
-            } else {
-                return res.response({
-                    success: false,
-                    message: 'OTP expired',
-                }).code(200);
-            }
+                message: 'OTP has expired. Please request a new one.',
+            });
         }
+        if (otpCode.otp != otp) {
+            return res.response({
+                success: false,
+                message: 'Invalid OTP',
+            })
+        }
+        const payload = {
+            user_id: user.id,
+            phone: user.phone,
+            name: user.name
+        }
+        const refresh_token = await JWTFunctions.generateToken(payload, '1d');
+        const access_token = await JWTFunctions.generateToken(payload, '30d');
+        await user.update({
+            access_token: access_token,
+            refresh_token: refresh_token
+        }, {
+            where: {
+                id: user.id
+            }
+        })
+        return res.response({
+            success: true,
+            message: 'OTP verified successfully',
+            data: {
+                access_token: access_token,
+                refresh_token: refresh_token,
+                user: payload,
+            }
+        })
     } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        })
+    }
+}
+
+const validateusersession = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const user = await Users.findOne({
+            where: { id: session_user.id, access_token: req.headers['authorization'] },
+            raw: true,
+            attributes: ['id', 'name', 'phone'],
+        },
+        )
+        if (!user) {
+            throw new Error('Session expired');
+        }
+        return res.response({
+            success: true,
+            message: 'Session validated',
+            data: user,
+        }).code(200);
+    } catch (error) {
+        console.log(error);
         return res.response({
             success: false,
             message: error.message,
@@ -211,8 +164,66 @@ const register_and_login_verify_otp = async (req, res) => {
     }
 }
 
+const logout = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const { refresh_token } = req.payload;
+        if (!refresh_token) {
+            throw new Error('Refresh token required');
+        }
+        const decoded = JWTFunctions.verifyToken(refresh_token);
+        const user = await Users.findOne({ where: { id: decoded.id } });
+        if (!user) {
+            throw new Error('User not found');
+        }
+       
+        await Users.update({
+            access_token: null,
+            refresh_token: null,
+        }, {
+            where: {
+                id: session_user.id
+            }
+        })
+        return res.response({
+            success: true,
+            message: 'Logout successful',
+        }).code(200);
+
+    } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
+    }
+}
+
+const update_user = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+       const { name, phone, gender, profile_image_id, } = req.payload;
+        return res.response({
+            success: true,
+            message: 'User updated successfully',
+        }).code(200);
+    } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
+    }
+}
 module.exports = {
-    list_users,
-    register_and_login_by_otp,
-    register_and_login_verify_otp
+    request_otp,
+    verify_otp,
+    validateusersession,
+    logout,
 }

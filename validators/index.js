@@ -9,4 +9,5 @@ const HeaderValidator = Joi.object({
 module.exports = {
     HeaderValidator,
     UserValidators: require('./users_validators'),
+    ShopValidators: require('./shop_validators')
 }

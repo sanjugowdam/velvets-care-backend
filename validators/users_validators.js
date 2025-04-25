@@ -1,40 +1,16 @@
 const Joi = require('joi');
-const list_users_query = Joi.object({
-    page: Joi.number().allow(null).messages({
-        "number.empty": "Page is required",
-    }),
-    limit: Joi.number().allow(null).messages({
-        "number.empty": "Limit is required",
-    }),
-    sort_by: Joi.string().allow(null).valid('name', 'phone').messages({
-        'string.empty': 'Sort is required',
-    }),
-    order: Joi.string().allow(null).valid('asc', 'desc').messages({
-        'string.empty': 'Order is required',
-    }),
-    search: Joi.string().allow(null).messages({
-        'string.empty': 'Search is required',
+
+const login_user = Joi.object({
+    phone: Joi.string().required().messages({
+        'string.empty': 'Phone number is required',
+        'any.required': 'Phone number is required',
     }),
 })
 
-const register_login_user_and_send_otp_payload = Joi.object({
-    name: Joi.string().required().messages({
-        'string.empty': 'Name is required',
-        'any.required': 'Name is required',
-    }),
+const verify_otp = Joi.object({
     phone: Joi.string().required().messages({
-        'string.empty': 'Phone is required',
-        'any.required': 'Phone is required',
-    }),
-})
-const register_login_user_otp_verification_payload = Joi.object({
-    name: Joi.string().required().messages({
-        'string.empty': 'Name is required',
-        'any.required': 'Name is required',
-    }),
-    phone: Joi.string().required().messages({
-        'string.empty': 'Phone is required',
-        'any.required': 'Phone is required',
+        'string.empty': 'Phone number is required',
+        'any.required': 'Phone number is required',
     }),
     otp: Joi.string().required().messages({
         'string.empty': 'OTP is required',
@@ -42,8 +18,37 @@ const register_login_user_otp_verification_payload = Joi.object({
     }),
 })
 
+const update_user = Joi.object({
+    name: Joi.string().required().messages({
+        'string.empty': 'Name is required',
+        'any.required': 'Name is required',
+    }),
+    phone: Joi.string().required().messages({
+        'string.empty': 'Phone number is required',
+        'any.required': 'Phone number is required',
+    }),
+    gender: Joi.string().required().messages({
+        'string.empty': 'Gender is required',
+        'any.required': 'Gender is required',
+    }),
+    distance_preference: Joi.number().integer().allow(null).messages({
+        'string.empty': 'Distance preference cannot be empty',
+    }),
+    profile_image_id: Joi.number().integer().allow(null).messages({
+        'string.empty': 'Profile image is required',
+    }),
+})
+
+const logout_user = Joi.object({
+    refresh_token: Joi.string().required().messages({
+        'string.empty': 'Refresh token is required',
+        'any.required': 'Refresh token is required',
+    }),
+})
+
 module.exports = {
-    list_users_query,
-    register_login_user_otp_verification_payload,
-    register_login_user_and_send_otp_payload
+    login_user,
+    update_user,
+    verify_otp_validator: verify_otp,
+    logout_user
 }

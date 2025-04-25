@@ -1,38 +1,34 @@
 'use strict';
 /** @type {import('sequelize-cli').Migration} */
-const { Users } = require('../config/tables')
+
+const {
+  tables: {
+    Files
+  },
+  sequelize
+} = require('../config')
+module.exports = {
+}
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable(Users, {
+    await queryInterface.createTable(Files, {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      name: {
+      files_url: {
         type: Sequelize.STRING
       },
-      phone: {
+      extension: {
         type: Sequelize.STRING
       },
-      access_token: {
-        type: Sequelize.STRING(2000)
-      },
-      refresh_token: {
-        type: Sequelize.STRING(2000)
-      },
-      distance_preference: {
+      original_name: {
         type: Sequelize.STRING
       },
-      gender: {
+      size: {
         type: Sequelize.STRING
-      },
-      otp_id: {
-        type: Sequelize.INTEGER
-      },
-      profile_image_id: {
-        type: Sequelize.INTEGER
       },
       createdAt: {
         allowNull: false,
@@ -49,6 +45,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable(Users);
+    await queryInterface.dropTable(Files);
   }
 };

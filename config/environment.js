@@ -3,4 +3,13 @@ require('dotenv').config();
 module.exports = {
     HOST: process.env.HOST,
     PORT: process.env.PORT,
-};
+    JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
+    DB_NAME: process.env.DB_NAME,
+    DB_USERNAME: process.env.DB_USERNAME,
+    DB_PASSWORD: process.env.DB_PASSWORD,
+    DB_HOST: process.env.DB_HOST,
+    TWILIO_SID: process.env.TWILIO_SID,
+    TWILIO_TOKEN: process.env.TWILIO_TOKEN,
+    TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
+    GOOGLE_MAPS_API_KEY : process.env.GOOGLE_MAPS_API_KEY
+}; 
