@@ -28,6 +28,14 @@ const searchShopsValidator = Joi.object({
       'string.empty': 'Search radius is required',
       'any.required': 'Search radius is required',
     }),
+    lat: Joi.string().required().messages({
+      'string.empty': 'Latitude is required',
+      'any.required': 'Latitude is required',
+    }),
+    long: Joi.string().required().messages({
+      'string.empty': 'Longitude is required',
+      'any.required': 'Longitude is required',
+    }),
 });
 
 module.exports = {
