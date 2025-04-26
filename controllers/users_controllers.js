@@ -210,13 +210,13 @@ const update_user = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
-        const { name, phone, gender, profile_image_id, } = req.payload;
+        const { name, phone, gender, profile_image, dob} = req.payload;
         const user = await Users.findOne({ where: { id: session_user.user_id} });
         if (!user) {
             throw new Error('User not found');
         }
-        const storePath = await FileFunctions(req, profile_image_id, '../uploads/profiles');
-        const uploadedImage = await FileFunctions(req, image, storePath);
+        const storePath = await FileFunctions.uploadFile(req, profile_image, '../uploads/profiles');
+        const uploadedImage = await FileFunctions.uploadFile(req, image, storePath);
         const uploaded_files = await Files.create({
             file_url: uploadedImage.file_url,
             extension: uploadedImage.extension,
@@ -227,6 +227,7 @@ const update_user = async (req, res) => {
             name: name,
             phone: phone,
             gender: gender,
+            dob: dob,
             profile_image_id: uploaded_files.id,
         }, {
             where: {

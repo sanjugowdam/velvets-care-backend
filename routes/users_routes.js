@@ -109,6 +109,7 @@ module.exports = [
                 SessionValidator
             ],
             validate: {
+                headers: HeaderValidator,
                 payload: update_user_profile,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);

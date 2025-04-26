@@ -19,7 +19,7 @@ const verify_otp = Joi.object({
 })
 
 const update_user_profile = Joi.object({
-    name: Joi.string().required().messages({
+    name: Joi.string().allow(null).messages({
         'string.empty': 'Name is required',
         'any.required': 'Name is required',
     }),
@@ -27,9 +27,12 @@ const update_user_profile = Joi.object({
         'string.empty': 'Phone number is required',
         'any.required': 'Phone number is required',
     }),
-    gender: Joi.string().required().messages({
+    gender: Joi.string().allow(null).messages({
         'string.empty': 'Gender is required',
         'any.required': 'Gender is required',
+    }),
+    dob: Joi.string().allow(null).messages({
+        'string.empty': 'Date of birth is required',
     }),
     profile_image_id: Joi.number().integer().allow(null).messages({
         'string.empty': 'Profile image is required',
