@@ -34,7 +34,7 @@ const update_user_profile = Joi.object({
     dob: Joi.string().allow(null).messages({
         'string.empty': 'Date of birth is required',
     }),
-    profile_image_id: Joi.number().integer().allow(null).messages({
+    profile_image: Joi.number().integer().allow(null).messages({
         'string.empty': 'Profile image is required',
     }),
 })
