@@ -4,13 +4,11 @@ const Boom = require('@hapi/boom');
 const {
     ShopsControllers: {
         getFashionShops,
-        searchShops
     }
 } = require('../controllers');
 const {
     ShopValidators: {
         getshop,    
-        searchShopsValidator
     },
     HeaderValidator,
 } = require('../validators');
@@ -34,20 +32,5 @@ module.exports = [
         },
         handler: getFashionShops,
     },
-    {
-        method: 'GET',
-        path: '/shops/search',
-        options: {
-            description: 'Search fashion shops',
-            tags,
-            validate: {
-                query: searchShopsValidator,
-                failAction: (request, h, err) => {
-                    const errors = err.details.map(e => e.message);
-                    throw Boom.badRequest(errors.join(', '));
-                }
-            }    
-        },
-        handler: searchShops,           
-        }
+   
     ];

@@ -4,5 +4,8 @@ module.exports = {
     MailFunctions: require('./mail_functions'),
     EncryptFunction: require('./encryption'),
     FileFunctions: require('./file_functions'),
-    OTPFunctions: require('./otp')
+    OTPFunctions: require('./otp'),
+    ScannerFunctions: require('./scanner'),
+    GeminiFunctions: require('./GeminiAPI'),
+    GoogleFunctions: require('./googleVision')
 }

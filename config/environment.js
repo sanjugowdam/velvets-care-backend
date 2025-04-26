@@ -11,5 +11,5 @@ module.exports = {
     TWILIO_SID: process.env.TWILIO_SID,
     TWILIO_TOKEN: process.env.TWILIO_TOKEN,
     TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
-    GOOGLE_MAPS_API_KEY : process.env.GOOGLE_MAPS_API_KEY
+    GOOGLE_API_KEY : process.env.GOOGLE_API_KEY
 }; 

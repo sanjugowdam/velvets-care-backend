@@ -2,6 +2,7 @@ module.exports = {
     Otps: 'otps',
     Users: 'users',
     Files: 'files',
+    Brands: 'brands',
     Admins: 'admins',
     Scans: 'scans',
     UserScans: 'user_scans',

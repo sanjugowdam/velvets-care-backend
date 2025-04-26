@@ -25,7 +25,7 @@ module.exports = [
 
     {
         method: 'POST',
-        path: '/users/login-register',
+        path: '/user/login-register',
         options: {
             description: 'Login and register user',
             tags,
@@ -41,7 +41,7 @@ module.exports = [
     },
     {
         method: 'POST',
-        path: '/users/verify-otp',
+        path: '/user/verify-otp',
         options: {
             description: 'Verify OTP',
             tags,
@@ -58,7 +58,7 @@ module.exports = [
 
     {
         method: 'GET',
-        path: '/session-check-user',
+        path: '/user/validate-session',
         options: {
             description: 'Check user session',
             tags,
@@ -74,7 +74,7 @@ module.exports = [
     },
     {
         method: 'POST',
-        path: '/users/logout',
+        path: '/user/logout',
         options: {
             description: 'Logout user',
             tags,

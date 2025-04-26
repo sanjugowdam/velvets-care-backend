@@ -9,6 +9,7 @@ const {
   },
   sequelize
 } = require('../config')
+const OTPS = require('./otp')
 class UsersModel extends Model {}
 UsersModel.init({
   name: DataTypes.STRING,
@@ -24,4 +25,9 @@ UsersModel.init({
   paranoid: true,
   modelName: Users,
 });
+
+ // associations can be defined here
+  UsersModel.belongsTo(OTPS, { foreignKey: 'otp_id' });
+  OTPS.hasMany(UsersModel, { foreignKey: 'otp_id' });
+
 module.exports = UsersModel;
