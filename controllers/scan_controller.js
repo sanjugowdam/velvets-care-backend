@@ -14,7 +14,7 @@ const scanProductTag = async (req, res) => {
         console.log(session_user, "session checker");
         const user = await Users.findOne({ where: { id: session_user.user_id }, raw: true });
         console.log(user,  "user checker");
-        if (!user) {
+        if (user) {
             const { image, lat, long } = req.payload;
             if (!image || !lat || !long) {
                 return res.response({
