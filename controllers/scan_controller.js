@@ -61,12 +61,13 @@ const scanProductTag = async (req, res) => {
             }).code(200);
 
         }
+        throw new Error('User not found');
     } catch (err) {
         console.error('Error:', err.message);
         return res.response({
             success: false,
-            message: 'Failed to scan product tag',
-            error: err.message,
+            message: err.message,
+            error: err,
         }).code(500);
     }
 };
