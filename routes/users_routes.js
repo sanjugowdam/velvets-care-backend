@@ -114,7 +114,12 @@ module.exports = [
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
-                }
+                },
+            },
+            payload: {
+                maxBytes: 5 * 1024 * 1024, 
+                parse: true,  
+                output: 'file',  
             },
             handler: update_user,
         },
