@@ -11,7 +11,9 @@ const scanProductTag = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
+        console.log(session_user, "session checker");
         const user = await Users.findOne({ where: { id: session_user.user_id } });
+        console.log(user,  "user checker");
         if (!user) {
             const { image, lat, long } = req.payload;
             if (!image || !lat || !long) {
@@ -19,11 +21,6 @@ const scanProductTag = async (req, res) => {
                     success: false,
                     message: 'Image, latitude, and longitude are required',
                 }).code(400);
-            }
-
-            const user = await Users.findOne({ where: { id: decoded.user_id } });
-            if (!user) {
-                throw new Error('User not found');
             }
             const adress_data = await getAddressFromCoordinates(lat, long);
 
