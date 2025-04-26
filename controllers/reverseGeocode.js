@@ -11,7 +11,7 @@ const getAddressFromCoordinates = async (lat, lng) => {
 
     // Check if the response contains results
     if (response.data.results.length > 0) {
-      const address = response.data.results[0].formatted_address;
+      const address = response?.data?.results?.[0]?.formatted_address;
       return address;  // Return the first address result
     } else {
       throw new Error('No address found for the given coordinates');
