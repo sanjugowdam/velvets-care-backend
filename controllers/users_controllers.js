@@ -42,7 +42,7 @@ const request_otp = async (req, res) => {
             otp: otp,
             otp_time: Date.now()
         })
-        await TwilioFunctions(phone, otpCode.otp);
+        await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
         await Users.update({
             otp_id: otpCode.id
         }, {
