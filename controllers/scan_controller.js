@@ -12,7 +12,7 @@ const scanProductTag = async (req, res) => {
             throw new Error('Session expired');
         }
         console.log(session_user, "session checker");
-        const user = await Users.findOne({ where: { id: session_user.user_id } });
+        const user = await Users.findOne({ where: { id: session_user.user_id }, raw: true });
         console.log(user,  "user checker");
         if (!user) {
             const { image, lat, long } = req.payload;
