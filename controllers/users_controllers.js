@@ -1,6 +1,7 @@
 const {
     Users,
-    Otps
+    Otps,
+    Files
 } = require('../models')
 const {
     Op
@@ -9,7 +10,7 @@ const {
     OTPFunctions, JWTFunctions
 } = require('../helpers')
 
-const { sendOtpViaTwilio } = require('../helpers/twilio')
+const { TwilioFunctions, FileFunctions } = require('../helpers')
 
 const request_otp = async (req, res) => {
     try {
@@ -27,7 +28,7 @@ const request_otp = async (req, res) => {
                 otp: otp,
                 otp_time: Date.now()
             })
-            await sendOtpViaTwilio(phone, otpCode.otp);
+            await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
             await Users.create({
                 phone: phone,
                 otp_id: otpCode.id
@@ -41,7 +42,7 @@ const request_otp = async (req, res) => {
             otp: otp,
             otp_time: Date.now()
         })
-        await sendOtpViaTwilio(phone, otpCode.otp);
+        await TwilioFunctions(phone, otpCode.otp);
         await Users.update({
             otp_id: otpCode.id
         }, {
@@ -141,8 +142,9 @@ const validateusersession = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
+        console.log(session_user, "session checker");
         const user = await Users.findOne({
-            where: { id: session_user.id, access_token: req.headers['authorization'] },
+            where: { id: session_user.user_id, access_token: req.headers['authorization'] },
             raw: true,
             attributes: ['id', 'name', 'phone'],
         },
@@ -175,17 +177,17 @@ const logout = async (req, res) => {
             throw new Error('Refresh token required');
         }
         const decoded = JWTFunctions.verifyToken(refresh_token);
-        const user = await Users.findOne({ where: { id: decoded.id } });
+        const user = await Users.findOne({ where: { id: decoded.user_id } });
         if (!user) {
             throw new Error('User not found');
         }
-       
+
         await Users.update({
             access_token: null,
             refresh_token: null,
         }, {
             where: {
-                id: session_user.id
+                id: session_user.user_id
             }
         })
         return res.response({
@@ -208,7 +210,29 @@ const update_user = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
-       const { name, phone, gender, profile_image_id, } = req.payload;
+        const { name, phone, gender, profile_image_id, } = req.payload;
+        const user = await Users.findOne({ where: { id: session_user.user_id} });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const storePath = await FileFunctions(req, profile_image_id, '../uploads/profiles');
+        const uploadedImage = await FileFunctions(req, image, storePath);
+        const uploaded_files = await Files.create({
+            file_url: uploadedImage.file_url,
+            extension: uploadedImage.extension,
+            original_name: uploadedImage.original_name,
+            size: uploadedImage.size
+        })
+        await Users.update({
+            name: name,
+            phone: phone,
+            gender: gender,
+            profile_image_id: uploaded_files.id,
+        }, {
+            where: {
+                id: session_user.user_id
+            }
+        })
         return res.response({
             success: true,
             message: 'User updated successfully',
@@ -221,9 +245,56 @@ const update_user = async (req, res) => {
         }).code(200);
     }
 }
+const user_refresh_token = async (req, res) => {
+    try {
+        const { refresh_token } = req.headers;
+        if (!refresh_token) {
+            throw new Error('Refresh token required');
+        }
+        const decoded = JWTFunctions.verifyToken(refresh_token);
+        const user = await Users.findOne({ where: { id: decoded.user_id } });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const payload = {
+            user_id: user.id,
+            phone: user.phone,
+            name: user.name
+        }
+        const access_token = await JWTFunctions.generateToken( payload , '1d');
+        const new_refresh_token = await JWTFunctions.generateToken( payload , '30d');
+        await Users.update({
+            access_token: access_token,
+            refresh_token: new_refresh_token
+        }, {
+            where: {
+                id: decoded.user_id
+            }
+        }
+        )
+        return res.response({
+            success: true,
+            message: 'Token refreshed successfully',
+            data: {
+                access_token: access_token,
+                refresh_token: new_refresh_token,
+                user: payload
+            }
+        }).code(200);
+    } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
+    }
+}
+
 module.exports = {
     request_otp,
     verify_otp,
     validateusersession,
     logout,
+    update_user,
+    user_refresh_token
 }

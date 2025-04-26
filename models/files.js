@@ -1,6 +1,7 @@
 'use strict';
 const {
-  Model
+  Model,
+  DataTypes
 } = require('sequelize');
 
 const {
@@ -10,7 +11,7 @@ const {
   sequelize
 } = require('../config')
   class FILES extends Model {}
-  Files.init({
+  FILES.init({
     files_url: DataTypes.STRING,
     extension: DataTypes.STRING,
     original_name: DataTypes.STRING,

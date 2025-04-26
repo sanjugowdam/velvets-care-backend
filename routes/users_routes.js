@@ -8,17 +8,22 @@ const {
         request_otp,
         verify_otp,
         validateusersession,
-        logout
+        logout,
+        update_user,
+        user_refresh_token
     }
 } = require('../controllers');
 const {
     UserValidators: {
         login_user,
         verify_otp_validator,
-        logout_user
+        logout_user,
+        update_user_profile,
+        user_refresh_token_validator
     },
     HeaderValidator,
 } = require('../validators');
+
 
 const tags = ["api", "Users"];
 module.exports = [
@@ -62,6 +67,9 @@ module.exports = [
         options: {
             description: 'Check user session',
             tags,
+            pre: [
+                SessionValidator
+            ],
             validate: {
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
@@ -78,6 +86,9 @@ module.exports = [
         options: {
             description: 'Logout user',
             tags,
+            pre: [
+                SessionValidator
+            ],
             validate: {
                 payload: logout_user,
                 failAction: (request, h, err) => {
@@ -87,7 +98,40 @@ module.exports = [
             },
         },
         handler: logout,
+    },
+    {
+        method: 'PUT',
+        path: '/user/update-profile',
+        options: {
+            description: 'Update user profile',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                payload: update_user_profile,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+            handler: update_user,
+        },
+    },
+    {
+        method: 'POST',
+        path: '/user/refresh-token',
+        options: {
+            description: 'Refresh user token',
+            tags,
+            validate: {
+                headers: user_refresh_token_validator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: user_refresh_token,
     }
-
-
 ];

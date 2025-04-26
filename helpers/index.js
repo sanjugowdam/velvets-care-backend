@@ -7,5 +7,6 @@ module.exports = {
     OTPFunctions: require('./otp'),
     ScannerFunctions: require('./scanner'),
     GeminiFunctions: require('./GeminiAPI'),
-    GoogleFunctions: require('./googleVision')
+    GoogleFunctions: require('./googleVision'),
+    TwilioFunctions: require('./twilio')
 }

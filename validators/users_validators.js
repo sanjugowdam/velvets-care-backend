@@ -18,7 +18,7 @@ const verify_otp = Joi.object({
     }),
 })
 
-const update_user = Joi.object({
+const update_user_profile = Joi.object({
     name: Joi.string().required().messages({
         'string.empty': 'Name is required',
         'any.required': 'Name is required',
@@ -31,9 +31,6 @@ const update_user = Joi.object({
         'string.empty': 'Gender is required',
         'any.required': 'Gender is required',
     }),
-    distance_preference: Joi.number().integer().allow(null).messages({
-        'string.empty': 'Distance preference cannot be empty',
-    }),
     profile_image_id: Joi.number().integer().allow(null).messages({
         'string.empty': 'Profile image is required',
     }),
@@ -45,10 +42,17 @@ const logout_user = Joi.object({
         'any.required': 'Refresh token is required',
     }),
 })
+const user_refresh_token_validator = Joi.object({
+    refresh_token: Joi.string().required().messages({
+        'string.empty': 'Refresh token is required',
+        'any.required': 'Refresh token is required',
+    }),
+}).unknown()
 
 module.exports = {
     login_user,
-    update_user,
+    update_user_profile,
     verify_otp_validator: verify_otp,
-    logout_user
+    logout_user,
+    user_refresh_token_validator
 }
