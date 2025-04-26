@@ -1,6 +1,5 @@
 const Joi = require('joi');
 
-const Joi = require('joi');
 
 const scanValidator = Joi.object({
   lat: Joi.number().required().messages({
@@ -11,10 +10,16 @@ const scanValidator = Joi.object({
     'number.base': 'Longitude must be a number',
     'any.required': 'Longitude is required',
   }),
-  image: Joi.object().required().messages({
+  image: Joi.any()
+  .meta({ swaggerType: 'file' })
+  .description('Image file of the QR code/barcode')
+  .required().messages({
     'any.required': 'Image is required',
+    'string.empty': 'Image is required',
   }),
  
 });
 
-module.exports = scanValidator;
+module.exports ={
+    scanValidator
+} 

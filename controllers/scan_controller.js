@@ -11,7 +11,7 @@ const scanProductTag = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
-        const user = await Users.findOne({ where: { id: session_user.id } });
+        const user = await Users.findOne({ where: { id: session_user.user_id } });
         if (!user) {
             const { image, lat, long } = req.payload;
             if (!image || !lat || !long) {
@@ -21,14 +21,14 @@ const scanProductTag = async (req, res) => {
                 }).code(400);
             }
 
-            const user = await Users.findOne({ where: { id: decoded.id } });
+            const user = await Users.findOne({ where: { id: decoded.user_id } });
             if (!user) {
                 throw new Error('User not found');
             }
-            
+            const adress_data = await getAddressFromCoordinates(lat, long);
 
             const storePath = path.join(__dirname, '../uploads/scan_data');
-            const uploadedImage = await FileFunctions(req, image, storePath);
+            const uploadedImage = await FileFunctions.uploadFile(req, image, storePath);
 
             const uploaded_files = await Files.create({
                 file_url: uploadedImage.file_url,
@@ -48,12 +48,11 @@ const scanProductTag = async (req, res) => {
             const scan = await Scans.create({
                 lat: lat,
                 long: long,
-                adress: adress_data.address,
+                adress: adress_data,
                 scan_data: scan_data,
                 image_id: uploaded_files.id,
                 user_id: user.id,
             });
-
             // 6. Send a success response
             return res.response({
                 success: true,

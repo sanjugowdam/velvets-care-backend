@@ -1,6 +1,7 @@
 'use strict';
 const {
-  Model
+  Model,
+  DataTypes
 } = require('sequelize');
 const {
   tables: {

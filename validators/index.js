@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const scanValidator = require('./scan_validator');
 const HeaderValidator = Joi.object({
     authorization: Joi.string().required().messages({
         'string.empty': 'Authorization is required',
@@ -9,5 +10,6 @@ const HeaderValidator = Joi.object({
 module.exports = {
     HeaderValidator,
     UserValidators: require('./users_validators'),
-    ShopValidators: require('./shop_validators')
+    ShopValidators: require('./shop_validators'),
+    ScanValidator: require('./scan_validator')
 }
