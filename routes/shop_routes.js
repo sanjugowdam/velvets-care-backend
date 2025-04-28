@@ -4,11 +4,16 @@ const Boom = require('@hapi/boom');
 const {
     ShopsControllers: {
         getFashionShops,
+    },
+    AddressController:{
+        getAddress
     }
+
 } = require('../controllers');
 const {
     ShopValidators: {
-        getshop,    
+        getshop, 
+        Getlcoation_validator   
     },
     HeaderValidator,
 } = require('../validators');
@@ -32,5 +37,21 @@ module.exports = [
         },
         handler: getFashionShops,
     },
-   
+   {
+    method: 'GET',
+    path: '/get_address',
+    options:{
+        description: 'get address from lat and long',
+        tags,
+        validate: {
+            query: Getlcoation_validator,
+            failAction: (request, h, err) => {
+                const errors = err.details.map(e => e.message);
+                throw Boom.badRequest(errors.join(', '));
+            }
+        }
+    },
+    handler: getAddress
+
+   }
     ];

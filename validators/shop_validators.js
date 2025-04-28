@@ -18,8 +18,20 @@ const getshop = Joi.object({
   }),
 });
 
+const Getlcoation_validator = Joi.object({
+  lat: Joi.number().required().messages({
+    'string.empty': 'Latitude is required',
+    'any.required': 'Latitude is required',
+  }),
+  long: Joi.number().required().messages({
+    'string.empty': 'Longitude is required',
+    'any.required': 'Longitude is required',
+  }),
+})
+
 
 module.exports = {
   getshop,
+  Getlcoation_validator
   
 };

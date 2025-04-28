@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Scans, Files, Users } = require('../models');  // Sequelize models for SCANS and File tables
-const { FileFunctions, GoogleFunctions } = require('../helpers');  // Existing helper for Google Vision
+const { FileFunctions, GoogleFunctions , ScannerFunctions} = require('../helpers');  // Existing helper for Google Vision
 const { getAddressFromCoordinates } = require('./reverseGeocode');
 
 // Controller to handle scanning product tag QR code or barcode
@@ -14,8 +14,10 @@ const scanProductTag = async (req, res) => {
         console.log(session_user, "session checker");
         const user = await Users.findOne({ where: { id: session_user.user_id }, raw: true });
         console.log(user,  "user checker");
+
         if (user) {
             const { image, lat, long } = req.payload;
+            console.log(image, lat, long);
             if (!image || !lat || !long) {
                 return res.response({
                     success: false,
@@ -24,8 +26,8 @@ const scanProductTag = async (req, res) => {
             }
             const adress_data = await getAddressFromCoordinates(lat, long);
 
-            const storePath = path.join(__dirname, './uploads/scan_data');
-            const uploadedImage = await FileFunctions.uploadFile(req, image, storePath);
+            // const storePath = path.join(__dirname, './uploads/scan_data');
+            const uploadedImage = await FileFunctions.uploadFile(req, image, './uploads/scan_data/');
 
             const uploaded_files = await Files.create({
                 file_url: uploadedImage.file_url,
@@ -35,7 +37,7 @@ const scanProductTag = async (req, res) => {
                 user_id: user.id
             });
             
-            const scan_data = await GoogleFunctions(uploadedImage.file_url);
+            const scan_data = await ScannerFunctions.scanQRCode(image.path);
             if (!scan_data) {
                 return res.response({
                     success: false,

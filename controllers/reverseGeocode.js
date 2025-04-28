@@ -8,10 +8,11 @@ const getAddressFromCoordinates = async (lat, lng) => {
         key: process.env.GOOGLE_API_KEY,  // Your Google API Key
       }
     });
-
+      // console.log(response.data, "response-loaction");
     // Check if the response contains results
     if (response.data.results.length > 0) {
       const address = response?.data?.results?.[0]?.formatted_address;
+      console.log(address, "-address-main");
       return address;  // Return the first address result
     } else {
       throw new Error('No address found for the given coordinates');
@@ -22,6 +23,28 @@ const getAddressFromCoordinates = async (lat, lng) => {
   }
 };
 
+const getAddress = async (req, res) => {
+  try {
+    const {lat, long} = req.query;
+    const address = getAddressFromCoordinates(lat, long)
+    return res.response({
+      success: true,
+      message: 'Address fetched successfully',
+      data: address,  
+    }).code(200);
+    
+  } catch (error) {
+    console.log(error);
+    return res.response({
+      success: false,
+      message: err.message,
+      error: err,
+  }).code(200);
+
+  }
+}
+
 module.exports = { 
-    getAddressFromCoordinates 
+    getAddressFromCoordinates,
+    getAddress
 };
