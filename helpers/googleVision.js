@@ -1,6 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
-require('dotenv').config(); // Load environment variables
+
 
 const analyzeImage = async (imagePath) => {
   try {
