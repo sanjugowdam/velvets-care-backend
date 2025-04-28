@@ -24,7 +24,7 @@ const scanProductTag = async (req, res) => {
             }
             const adress_data = await getAddressFromCoordinates(lat, long);
 
-            const storePath = path.join(__dirname, '../uploads/scan_data');
+            const storePath = path.join(__dirname, './uploads/scan_data');
             const uploadedImage = await FileFunctions.uploadFile(req, image, storePath);
 
             const uploaded_files = await Files.create({

@@ -23,12 +23,16 @@ const request_otp = async (req, res) => {
             raw: true
         })
         const otp = await OTPFunctions.getOTPByLength(4);
+        console.log("login otp:", otp);
         if (!user) {
             const otpCode = await Otps.create({
                 otp: otp,
                 otp_time: Date.now()
             })
-            await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+            const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+            if (!sent) {
+                throw new Error('OTP not sent');
+            }
             await Users.create({
                 phone: phone,
                 otp_id: otpCode.id
@@ -42,7 +46,10 @@ const request_otp = async (req, res) => {
             otp: otp,
             otp_time: Date.now()
         })
-        await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+        const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+        if (!sent) {
+            throw new Error('OTP not sent');
+        }
         await Users.update({
             otp_id: otpCode.id
         }, {
@@ -215,7 +222,7 @@ const update_user = async (req, res) => {
         if (!user) {
             throw new Error('User not found');
         }
-        const storePath = await FileFunctions.uploadFile(req, profile_image, '../uploads/profiles');
+        const storePath = await FileFunctions.uploadFile(req, profile_image, './uploads/profiles');
         const uploadedImage = await FileFunctions.uploadFile(req, image, storePath);
         const uploaded_files = await Files.create({
             file_url: uploadedImage.file_url,
