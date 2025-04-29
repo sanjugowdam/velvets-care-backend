@@ -309,12 +309,12 @@ const getusers = async (req, res) => {
         if (searchquery) {
             filter = {
                 [Op.or]: [
-                    { name: { [Op.iLike]: `%${searchquery}%` } },
-                    { phone: { [Op.iLike]: `%${searchquery}%` } },
+                    { name: { [Op.like]: `%${searchquery}%` } },
+                    { phone: { [Op.like]: `%${searchquery}%` } },
                 ],
             };
         }
-        const user_count = await Users.findAndCountAll({
+        const user_count = await Users.count({
             where: filter
         });
         const users = await Users.findAll({
@@ -326,10 +326,11 @@ const getusers = async (req, res) => {
             success: true,
             message: 'Users fetched successfully',
             data: users,
-            total: user_count.count,
+            total: user_count,
             page: page,
             limit: limit,
         }).code(200);
+        
         } catch (error) {
         console.log(error);
         return res.response({
