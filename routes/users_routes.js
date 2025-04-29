@@ -119,9 +119,16 @@ module.exports = [
                 },
             },
             payload: {
-                maxBytes: 5 * 1024 * 1024, 
-                parse: true,  
-                output: 'file',  
+                maxBytes: 5 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
+                }
             },
             handler: update_user,
         },
@@ -152,6 +159,7 @@ module.exports = [
                 SessionValidator
             ],
             validate: {
+                headers: HeaderValidator,
                 query: get_user_list,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);

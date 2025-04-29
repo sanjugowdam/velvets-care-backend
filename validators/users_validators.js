@@ -36,8 +36,7 @@ const update_user_profile = Joi.object({
     }),
     profile_image: Joi.any()
       .meta({ swaggerType: 'file' })
-      .description('Image file of the QR code/barcode')
-      .required().messages({
+      .description('Image file of the QR code/barcode').messages({
         'any.required': 'Image is required',
         'string.empty': 'Image is required',
       }),
