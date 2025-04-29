@@ -34,9 +34,13 @@ const update_user_profile = Joi.object({
     dob: Joi.string().allow(null).messages({
         'string.empty': 'Date of birth is required',
     }),
-    profile_image: Joi.number().integer().allow(null).messages({
-        'string.empty': 'Profile image is required',
-    }),
+    profile_image: Joi.any()
+      .meta({ swaggerType: 'file' })
+      .description('Image file of the QR code/barcode')
+      .required().messages({
+        'any.required': 'Image is required',
+        'string.empty': 'Image is required',
+      }),
 })
 
 const logout_user = Joi.object({

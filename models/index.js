@@ -4,5 +4,6 @@ module.exports = {
   Files: require('./files'),
   Scans: require('./scans'),
   Brands: require('./brands'),
+  Admins: require('./admins')
 
 }

@@ -23,7 +23,7 @@ const Brands = require('./brands')
     lattitude: DataTypes.STRING,
     longitude: DataTypes.STRING,
     adress: DataTypes.STRING,
-    scan_data: DataTypes.STRING,
+    scan_data: DataTypes.STRING(5000),
     process_data: DataTypes.STRING,
     image_id: DataTypes.INTEGER
   }, {

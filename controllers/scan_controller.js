@@ -41,7 +41,7 @@ const scanProductTag = async (req, res) => {
         const imagePath = path.join(__dirname, uploadedImage.file_url);
         console.log('Scanning image at:', imagePath);
         // Scan the QR code or barcode from the uploaded image
-        const scan_data = await ScannerFunctions.scanQRCodeOrBarcode(image.path);  // Use the absolute file path
+        const scan_data = await GoogleFunctions.analyzeImage(image.path);  // Use the absolute file path
         if (!scan_data) {
           return res.response({
             success: false,
@@ -53,7 +53,7 @@ const scanProductTag = async (req, res) => {
           lat: lat,
           long: long,
           adress: adress_data,
-          scan_data: scan_data,
+          scan_data:`Text: ${scan_data.text} | Barcode: ${scan_data.barcode}`, 
           image_id: uploaded_files.id,
           user_id: user.id,
         });
