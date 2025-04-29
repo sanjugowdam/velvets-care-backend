@@ -56,10 +56,26 @@ const user_refresh_token_validator = Joi.object({
     }),
 }).unknown()
 
+const get_user_list = Joi.object({
+    page: Joi.number().required().messages({
+        'string.empty': 'Page is required',
+        'any.required': 'Page is required',
+    }),
+    limit: Joi.number().required().messages({
+        'string.empty': 'Limit is required',
+        'any.required': 'Limit is required',
+    }),
+    searchquery: Joi.string().allow(null).messages({
+        'string.empty': 'Search query is required',
+    }),
+})
+
 module.exports = {
     login_user,
     update_user_profile,
     verify_otp_validator: verify_otp,
     logout_user,
-    user_refresh_token_validator
+    user_refresh_token_validator,
+    get_user_list
+
 }

@@ -298,11 +298,54 @@ const user_refresh_token = async (req, res) => {
     }
 }
 
+const getusers = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const {page, limit, searchquery} = req.qeury;
+       let  filter = {};
+        if (searchquery) {
+            filter = {
+                [Op.or]: [
+                    { name: { [Op.iLike]: `%${searchquery}%` } },
+                    { phone: { [Op.iLike]: `%${searchquery}%` } },
+                ],
+            };
+        }
+        const user_count = await Users.findAndCountAll({
+            where: filter
+        });
+        const users = await Users.findAll({
+            where: filter,
+            limit: limit,
+            offset: (page - 1) * limit,
+        });
+        return res.response({
+            success: true,
+            message: 'Users fetched successfully',
+            data: users,
+            total: user_count.count,
+            page: page,
+            limit: limit,
+        }).code(200);
+        } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
+    }
+}
+
 module.exports = {
     request_otp,
     verify_otp,
     validateusersession,
     logout,
     update_user,
-    user_refresh_token
+    user_refresh_token,
+    getusers
+    
 }

@@ -10,7 +10,8 @@ const {
         validateusersession,
         logout,
         update_user,
-        user_refresh_token
+        user_refresh_token,
+        getusers
     }
 } = require('../controllers');
 const {
@@ -19,7 +20,8 @@ const {
         verify_otp_validator,
         logout_user,
         update_user_profile,
-        user_refresh_token_validator
+        user_refresh_token_validator,
+        get_user_list
     },
     HeaderValidator,
 } = require('../validators');
@@ -139,5 +141,24 @@ module.exports = [
             },
         },
         handler: user_refresh_token,
+    },
+    {
+        method: 'GET',
+        path: '/users',
+        options: {
+            description: 'Get all users',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                query: get_user_list,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: getusers,
     }
 ];
