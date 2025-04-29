@@ -304,7 +304,7 @@ const getusers = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
-        const {page, limit, searchquery} = req.qeury;
+        const {page, limit, searchquery} = req.query;
        let  filter = {};
         if (searchquery) {
             filter = {
