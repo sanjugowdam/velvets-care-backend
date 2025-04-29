@@ -60,7 +60,7 @@ const get_user_list = Joi.object({
         'string.empty': 'Page is required',
         'any.required': 'Page is required',
     }),
-    limit: Joi.number().required().messages({
+    limit: Joi.number().allow(null).messages({
         'string.empty': 'Limit is required',
         'any.required': 'Limit is required',
     }),
