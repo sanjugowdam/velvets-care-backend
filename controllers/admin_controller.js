@@ -101,8 +101,8 @@ const send_otp_admin = async (req, res) => {
                     message: 'Invalid OTP',
                 })
             }
-            const access_token = await JWTFunctions.generateToken({ email: email }, '1h');
-            const refresh_token = await JWTFunctions.generateToken({ email: email }, '1d');
+            const access_token = await JWTFunctions.generateToken({ email: email, id: admin.id }, '1h');
+            const refresh_token = await JWTFunctions.generateToken({ email: email, id: admin.id}, '1d');
             await Admins.update({
                 access_token: access_token,
                 refresh_token: refresh_token,
@@ -114,6 +114,15 @@ const send_otp_admin = async (req, res) => {
             return res.response({
                 success: true,
                 message: 'OTP verified successfully',
+                data: {
+                    access_token: access_token,
+                    refresh_token: refresh_token,
+                    admin: {
+                        id: admin.id,
+                        name: admin.name,
+                        email: admin.email
+                    }
+                }
             })
         } catch (error) {
             console.log(error);
