@@ -5,6 +5,7 @@ module.exports = {
     Brands: 'brands',
     Admins: 'admins',
     Scans: 'scans',
+    Banners: 'banners',
     UserScans: 'user_scans',
     Notifications: 'notifications',
     SustainabilityScore: 'sustainability_score',

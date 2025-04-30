@@ -12,5 +12,7 @@ module.exports = {
     UserValidators: require('./users_validators'),
     ShopValidators: require('./shop_validators'),
     ScanValidator: require('./scan_validator'),
-    AdminValidator: require('./admin_validator')
+    AdminValidator: require('./admin_validator'),
+    BannerValidator: require('./banner_validator'),
+
 }

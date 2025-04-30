@@ -12,8 +12,9 @@ module.exports = {
     TWILIO_TOKEN: process.env.TWILIO_TOKEN,
     TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
     GOOGLE_API_KEY : process.env.GOOGLE_API_KEY,
+    YOUTUBE_CHANNEL_ID : process.env.YOUTUBE_CHANNEL_ID,
     MAIL_HOST: process.env.MAIL_HOST,
     MAIL_PORT: process.env.MAIL_PORT,
     MAIL_USER: process.env.MAIL_USER,
-    MAIL_PASS: process.env.MAIL_PASS
+    MAIL_PASS: process.env.MAIL_PASS,
 }; 
