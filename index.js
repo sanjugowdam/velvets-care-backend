@@ -52,11 +52,7 @@ const init = async () => {
             plugin: HapiSwagger,
             options: swaggerOptions
         }
-    ],{
-        routes: {
-            prefix: '/green-sense-ai'
-        }
-    });
+    ]);
 
     // Register routes
     const routesPlugin = {
