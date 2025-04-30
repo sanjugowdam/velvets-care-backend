@@ -37,8 +37,6 @@ const init = async () => {
                 name: 'Debanjan & Sanjay',
             }
         },
-        basePath: '/green-sense-ai',
-        documentationPath: '/green-sense-ai/documentation',
         grouping: 'tags',
         sortEndpoints: 'ordered',
         schemes: ['http', 'https'],  // 'https' for production
