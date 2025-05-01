@@ -23,7 +23,7 @@ const banner_upload = async (req, res) => {
         if (!title) {
             throw new Error('Banner title required');
         }
-        const uploadedImage = await FileFunctions.uploadFile(req, image, './uploads/banners');
+        const uploadedImage = await FileFunctions.uploadFile(req, image, 'uploads/banners');
         const uploaded_files = await Files.create({
             files_url: uploadedImage.file_url,
             extension: uploadedImage.extension,
