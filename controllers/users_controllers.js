@@ -222,7 +222,7 @@ const update_user = async (req, res) => {
         if (!user) {
             throw new Error('User not found');
         }
-        const storePath = await FileFunctions.uploadFile(req, profile_image, 'uploads/profiles');
+        const storePath = await FileFunctions.uploadFile(req, profile_image, 'uploads/profiles/');
         const uploadedImage = await FileFunctions.uploadFile(req, image, storePath);
         const uploaded_files = await Files.create({
             file_url: uploadedImage.file_url,
