@@ -15,15 +15,15 @@ const banner_upload = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
-        const { banner_image, title } = req.payload;
+        const { image, title } = req.payload;
 
-        if (!banner_image) {
+        if (!image) {
             throw new Error('Banner image required');
         }
         if (!title) {
             throw new Error('Banner title required');
         }
-        const uploadedImage = await FileFunctions.uploadFile(req, banner_image, './uploads/banners');
+        const uploadedImage = await FileFunctions.uploadFile(req, image, './uploads/banners');
         const uploaded_files = await Files.create({
             file_url: uploadedImage.file_url,
             extension: uploadedImage.extension,
