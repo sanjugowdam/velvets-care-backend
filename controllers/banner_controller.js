@@ -25,7 +25,7 @@ const banner_upload = async (req, res) => {
         }
         const uploadedImage = await FileFunctions.uploadFile(req, image, './uploads/banners');
         const uploaded_files = await Files.create({
-            file_url: uploadedImage.file_url,
+            files_url: uploadedImage.file_url,
             extension: uploadedImage.extension,
             original_name: uploadedImage.original_name,
             size: uploadedImage.size
