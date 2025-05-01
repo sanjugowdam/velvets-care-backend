@@ -11,7 +11,7 @@ const getFashionShops = async (req, res) => {
     }
     console.log("Sending request with lat:", lat, "lng:", long, "searchquery:", searchquery, "radius:", radius,);
     const requestBody = {
-      textQuery: `${searchquery ? `${searchquery}, ` : ''}zero waste,green products, natural products, sustainable products,`,
+      textQuery: `${searchquery ? `${searchquery}, ` : ''}zero waste,green products, natural products, sustainable,`,
       location_bias: {
         circle: {
           center: {
