@@ -97,7 +97,7 @@ const init = async () => {
         },
         handler: (request, h) => {
             const filePath = request.params.path;
-            const fullPath = path.join(__dirname, '../../', filePath);
+            const fullPath = path.join(__dirname, filePath);
 
             if (fs.existsSync(fullPath)) {
                 return h.file(fullPath);
