@@ -12,7 +12,7 @@ const youtube = async (request, h) => {
         channelId: channelId,
         part: 'snippet',
         order: 'date',
-        maxResults: 5
+        maxResults: 50
       }
     });
 
