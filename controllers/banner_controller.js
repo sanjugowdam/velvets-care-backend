@@ -108,7 +108,6 @@ const get_banner_admin = async (req, res) => {
         
         const banners_count = await Banners.count();
         const banners = await Banners.findAll({
-            where: filter,
             limit: limit,
             offset: (page - 1) * limit,
         });
@@ -116,7 +115,7 @@ const get_banner_admin = async (req, res) => {
         return res.response({
             success: true,
             message: 'Banners fetched successfully',
-            data: banner,
+            data: banners,
             total: banners_count,
             page: page,
             limit: limit
