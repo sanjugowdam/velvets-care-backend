@@ -6,6 +6,11 @@ const Vision = require('@hapi/vision');
 const HapiSwagger = require('hapi-swagger');
 const Package = require('./package.json');
 const seq = require("./config/sequelize");
+const Joi = require('joi');
+const Boom = require('@hapi/boom');
+const path = require('path');
+const fs = require('fs');
+
 const {
     env: {
         HOST,
@@ -69,6 +74,38 @@ const init = async () => {
         routes: {
             prefix: '/api/v1'
         },
+    });
+    // sending local files to client to preview
+    server.route({
+        method: 'GET',
+        path: '/{path*}',
+        options: {
+            tags: ['api', 'file'],  // Swagger tag
+            description: 'Preview a file in the browser',
+            notes: 'This API returns the file directly for preview in the browser.',
+            validate: {
+                params: Joi.object({
+                    path: Joi.string().required().description('Path to the file to stream').messages({
+                        'any.required': 'File path is required'
+                    })
+                }),
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: (request, h) => {
+            const filePath = request.params.path;
+            const fullPath = path.join(__dirname, '../../', filePath);
+
+            if (fs.existsSync(fullPath)) {
+                return h.file(fullPath);
+            } else {
+                console.error('File not found:', fullPath);
+                return h.response('File not found').code(404);
+            }
+        }
     });
 
 
