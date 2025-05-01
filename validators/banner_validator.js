@@ -16,7 +16,7 @@ const bannerValidator = Joi.object({
 
 const deleteBannerValidator = Joi.object({
     banner_id: Joi.number().required().messages({
-        'string.empty': 'Banner id is required',
+        'number.empty': 'Banner id is required',
         'any.required': 'Banner id is required',
     }),
 })
