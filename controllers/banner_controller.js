@@ -108,15 +108,19 @@ const get_banner_admin = async (req, res) => {
         
         const banners_count = await Banners.count();
         const banners = await Banners.findAll({
+            include: [
+                {
+                    model: Files,
+                    required: true
+                }
+            ],
             limit: limit,
             offset: (page - 1) * limit,
         });
-        const banner_url = await Files.findOne({ where: { id: banners.banner_image_id } });
         return res.response({ 
             success: true,
             message: 'Banners fetched successfully',
             data: banners,
-            banner_url: banner_url,
             total: banners_count,
             page: page,
             limit: limit
