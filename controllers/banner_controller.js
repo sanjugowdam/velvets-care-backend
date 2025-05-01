@@ -52,7 +52,14 @@ const banner_upload = async (req, res) => {
 
 const get_banner_users = async (req, res) => {
     try {
-        const banner = await Banners.findAll()
+        const banner = await Banners.findAll({
+            include: [
+                {
+                    model: Files,
+                    required: true
+                }
+            ]
+        })
         return res.response({
             success: true,
             message: 'Banners fetched successfully',
