@@ -17,5 +17,6 @@ const decryptText = async (encryptedText) => {
 
 module.exports = {
     encryptText,
-    decryptText
+    decryptText,
+    
 }

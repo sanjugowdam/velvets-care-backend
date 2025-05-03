@@ -35,9 +35,9 @@ const init = async () => {
     // Swagger options
     const swaggerOptions = {
         info: {
-            title: 'Green Sense AI API Documentation',
+            title: 'Velvets Care API Documentation',
             version: Package.version,
-            description: 'API Documentation for Green Sense AI',
+            description: 'API Documentation for Velvets Care',
             contact: {
                 name: 'Debanjan & Sanjay',
             }

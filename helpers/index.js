@@ -5,8 +5,5 @@ module.exports = {
     EncryptFunction: require('./encryption'),
     FileFunctions: require('./file_functions'),
     OTPFunctions: require('./otp'),
-    ScannerFunctions: require('./scanner'),
-    GeminiFunctions: require('./GeminiAPI'),
-    GoogleFunctions: require('./googleVision'),
     TwilioFunctions: require('./twilio')
 }

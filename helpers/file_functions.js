@@ -29,6 +29,7 @@ const uploadFile = async (req, file, store_path) => {
         console.log(`Success: ${file_name} file created`);
 
         file_url = `/${file_name}`;
+        
 
         return {
             file_url,
