@@ -12,5 +12,8 @@ module.exports = {
     ShopValidators: require('./shop_validators'),
     AdminValidator: require('./admin_validator'),
     BannerValidator: require('./banner_validator'),
+    DoctorValidator: require('./doctor_validator'),
+    DoctorAuthValidator: require('./doctor_auth_validator')
+
 
 }

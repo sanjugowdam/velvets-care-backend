@@ -21,6 +21,7 @@ const getshop = Joi.object({
 const Getlcoation_validator = Joi.object({
   lat: Joi.number().required().messages({
     'string.empty': 'Latitude is required',
+    
     'any.required': 'Latitude is required',
   }),
   long: Joi.number().required().messages({

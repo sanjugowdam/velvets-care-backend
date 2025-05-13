@@ -5,5 +5,6 @@ module.exports = {
     EncryptFunction: require('./encryption'),
     FileFunctions: require('./file_functions'),
     OTPFunctions: require('./otp'),
-    TwilioFunctions: require('./twilio')
+    TwilioFunctions: require('./twilio'),
+    GoogleAuthFunctions: require('./google_auth')
 }

@@ -1,41 +1,46 @@
 'use strict';
+const {
+  tables: {
+    Adresses
+  },
+  sequelize
+} = require('../config')
 /** @type {import('sequelize-cli').Migration} */
-const { Users } = require('../config/tables')
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable(Users, {
+    await queryInterface.createTable(Adresses, {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      name: {
+      street: {
         type: Sequelize.STRING
       },
-      phone: {
+      area: {
         type: Sequelize.STRING
       },
-      email: {
+      city: {
         type: Sequelize.STRING
       },
-      dob: {
+      state: {
         type: Sequelize.STRING
       },
-      access_token: {
-        type: Sequelize.STRING(2000)
-      },
-      refresh_token: {
-        type: Sequelize.STRING(2000)
-      },
-      gender: {
+      country: {
         type: Sequelize.STRING
       },
-      otp_id: {
-        type: Sequelize.INTEGER
+      zip: {
+        type: Sequelize.STRING
       },
-      profile_image_id: {
-        type: Sequelize.INTEGER
+      landmark: {
+        type: Sequelize.STRING
+      },
+      latitude: {
+        type: Sequelize.DECIMAL
+      },
+      longitude: {
+        type: Sequelize.DECIMAL
       },
       createdAt: {
         allowNull: false,
@@ -52,6 +57,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable(Users);
+    await queryInterface.dropTable(Adresses);
   }
 };

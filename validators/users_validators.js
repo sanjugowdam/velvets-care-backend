@@ -27,6 +27,10 @@ const update_user_profile = Joi.object({
         'string.empty': 'Phone number is required',
         'any.required': 'Phone number is required',
     }),
+    // email: Joi.string().allow(null).messages({
+    //     'string.empty': 'Email is required',
+    //     'any.required': 'Email is required',
+    // }),
     gender: Joi.string().allow(null).messages({
         'string.empty': 'Gender is required',
         'any.required': 'Gender is required',
@@ -68,6 +72,12 @@ const get_user_list = Joi.object({
         'string.empty': 'Search query is required',
     }),
 })
+const googleSignInValidator = Joi.object({
+      token: Joi.string().required().messages({
+        'string.empty': 'Token is required',
+        'any.required': 'Token is required',
+      }),
+    }).unknown()
 
 module.exports = {
     login_user,
@@ -75,6 +85,7 @@ module.exports = {
     verify_otp_validator: verify_otp,
     logout_user,
     user_refresh_token_validator,
-    get_user_list
+    get_user_list,
+    googleSignInValidator
 
 }

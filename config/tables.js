@@ -1,12 +1,13 @@
+
 module.exports = {
     Otps: 'otps',
     Users: 'users',
     Files: 'files',
-    Brands: 'brands',
     Admins: 'admins',
-    Scans: 'scans',
     Banners: 'banners',
-    UserScans: 'user_scans',
+    Doctors: 'doctors',
+    Doctorsavailability: 'doctorsavailability',
+    Adresses: 'addresses',
     Notifications: 'notifications',
     SustainabilityScore: 'sustainability_score',
     UserClicksOnStores: 'user_clicks_on_stores',

@@ -7,7 +7,7 @@ const {
     Op
 } = require('sequelize')
 const {
-    OTPFunctions, JWTFunctions
+    OTPFunctions, JWTFunctions, GoogleAuthFunctions
 } = require('../helpers')
 
 const { TwilioFunctions, FileFunctions } = require('../helpers')
@@ -339,14 +339,79 @@ const getusers = async (req, res) => {
         }).code(200);
     }
 }
+const googleSignIn = async (request, h) => {
+    try {
+        const { token } = request.payload;
+      const userData = await GoogleAuthFunctions.verifyGoogleToken(token);
+  
+      let user = await User.findByEmail(userData.email);
+  
+      let accessToken, refreshToken;
+  
+      // Upload profile image only if user does not exist
+      if (!user) {
+        const profileImage = await FileFunctions.uploadFile(request, userData.picture, 'uploads/profiles/');
+        const uploadedImage = await FileFunctions.uploadFile(req, image, profileImage);
+
+        const file = await Files.create({
+          file_url: uploadedImage.file_url,
+          extension: uploadedImage.extension,
+          original_name: uploadedImage.original_name,
+          size: uploadedImage.size
+        });
+  
+        accessToken = JWTFunctions.generateAccessToken(userData.email, userData.name);
+        refreshToken = JWTFunctions.generateRefreshToken(userData.email, userData.name);
+  
+       const user
+        = await Users.create({ 
+          email: userData.email,
+          name: userData.name,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          profile_image_id: file.id
+        });
+  
+      } else {
+        // Generate new tokens
+        accessToken = JWTFunctions.generateAccessToken(user.email, user.name);
+        refreshToken = JWTFunctions.generateRefreshToken(user.email, user.name);
+  
+        await Users.update({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        }, {
+          where: {
+            id: user.id
+          }
+        })
+      }
+      return h.response({
+        message: 'Login successful',
+        user,
+        accessToken,
+        refreshToken,
+      }).code(200);
+  
+    } catch (err) {
+      console.error(err);
+      return h.response({ 
+        success: false,
+        message: err.message
+      }).code(401);
+    }
+  };
+  
 
 module.exports = {
-    request_otp,
+    request_otp,                                                
     verify_otp,
     validateusersession,
     logout,
     update_user,
     user_refresh_token,
-    getusers
+    getusers,
+ googleSignIn 
+
     
 }

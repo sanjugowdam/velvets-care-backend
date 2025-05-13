@@ -16,12 +16,12 @@ class UsersModel extends Model {}
 UsersModel.init({
   name: DataTypes.STRING,
   phone: DataTypes.STRING,
+  email: DataTypes.STRING,
   dob: DataTypes.STRING,
   gender: DataTypes.STRING,
   otp_id: DataTypes.INTEGER,
   access_token: DataTypes.STRING,
   refresh_token: DataTypes.STRING,
-  distance_preference: DataTypes.STRING,
   profile_image_id: DataTypes.INTEGER,
 }, {
   sequelize,
