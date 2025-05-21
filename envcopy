@@ -1,0 +1,19 @@
+PORT=3000
+HOST=localhost
+
+DB_HOST=localhost
+DB_USERNAME=root
+DB_PASSWORD=
+DB_NAME=greensenseai
+
+DB_HOST_TEST=localhost
+DB_USERNAME_TEST=root
+DB_PASSWORD_TEST=
+DB_NAME_TEST=greensenseai
+
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=sanjum3236@gmail.com
+MAIL_PASS=kaei oatj vllg emlz
+
+JWT_SECRET_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
