@@ -14,7 +14,7 @@ module.exports = {
     await queryInterface.bulkInsert(Admins, [
       {
         name: 'Admin User',
-        email: 'debanjan.d@jurysoft.com',
+        email: 'sanjaym3236@gmail.com',
         refresh_token: null,
         access_token: null, // saving hashed "admin" password as access_token (example)
         otp_id: null,
