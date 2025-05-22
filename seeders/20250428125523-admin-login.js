@@ -27,6 +27,6 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     // Delete Admin record based on email
-    await queryInterface.bulkDelete(Admins, { email: 'debanjan.d@jurysoft.com' }, {});
+    await queryInterface.bulkDelete(Admins, { email: 'sanjaym3236@gmail.com' }, {});
   }
 };

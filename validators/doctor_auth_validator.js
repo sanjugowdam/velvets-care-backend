@@ -72,5 +72,5 @@ module.exports = {
     logout_doctor,
     get_doctor_list,
     doctor_refresh_token_validator,
-    update_doctor_profile_validator
+    
 }
