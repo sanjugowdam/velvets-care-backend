@@ -11,10 +11,11 @@ const {
   Model,
   DataTypes
 } = require('sequelize');
-
+const Doctors  =require ('../models/doctors')
   class Address extends Model {
   }
   Address.init({
+    doctor_id: DataTypes.INTEGER,
     street: DataTypes.STRING,
     area: DataTypes.STRING,
     city: DataTypes.STRING,
@@ -29,4 +30,7 @@ const {
     modelName: Adresses,
   });
   
+  Address.belongsTo(Doctors, { foreignKey: 'doctor_id' });
+  Doctors.hasMany(Address, { foreignKey: 'doctor_id' });
   module.exports = Address
+

@@ -6,13 +6,16 @@ const {
     Files
 } = require('../models')
 const {
-    Op
+    Op,
+    where
 } = require('sequelize')
 const {
     OTPFunctions, JWTFunctions
 } = require('../helpers')
 
-const { TwilioFunctions, FileFunctions } = require('../helpers')
+const { TwilioFunctions, FileFunctions } = require('../helpers');
+const { ComplianceInquiriesContextImpl } = require('twilio/lib/rest/trusthub/v1/complianceInquiries');
+const { default: ClientCapability } = require('twilio/lib/jwt/ClientCapability');
 
 const updateBasicDetails = async (req, h) => {
     try {
@@ -26,18 +29,18 @@ const updateBasicDetails = async (req, h) => {
             registration_certificate, medical_degree_certificate,
             consultation_fee, consultation_modes, languages_spoken
         } = req.payload;
-            const existing_doctor = await Doctors.findOne({
-                where: {
-                    [Op.or]: [
-                        { phone: phone },
-                        { email: email }
-                    ]
-                }
-            })
-
-            if (existing_doctor) {
-                throw new Error('Doctor already exists');
+        const existing_doctor = await Doctors.findOne({
+            where: {
+                [Op.or]: [
+                    { phone: phone },
+                    { email: email }
+                ]
             }
+        })
+
+        if (existing_doctor) {
+            throw new Error('Doctor already exists');
+        }
         // File Uploads
         let regCertFileId = null;
         let degreeCertFileId = null;
@@ -66,7 +69,7 @@ const updateBasicDetails = async (req, h) => {
             degreeCertFileId = degreeFile.id;
         }
 
-        const doctor = await Doctor.create({
+        const doctor = await Doctors.create({
             full_name,
             gender,
             date_of_birth,
@@ -82,7 +85,11 @@ const updateBasicDetails = async (req, h) => {
             languages_spoken
         });
 
-        return h.response({ success: true, doctor }).code(201);
+        return h.response({
+            success: true,
+            message: 'Basic details updated successfully',
+            data: doctor
+        }).code(201);
     } catch (err) {
         console.error(err);
         return h.response({ success: false, message: 'Error updating basic details' }).code(500);
@@ -101,45 +108,128 @@ const updateAddress = async (req, h) => {
             landmark, latitude, longitude, doctor_id
         } = req.payload;
 
-        const address = await Address.create({
-            street, area, city, state, country, zip,
-            landmark, latitude, longitude
+        const doctor = await Doctors.findOne({
+            where: { id: doctor_id }
         });
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
 
-        await Doctor.update({ address_id: address.id }, { where: { id: doctor_id } });
+        const available_address = await Adresses.findOne({
+            where: {
+                doctor_id: doctor_id
+            }
+        })
 
-        return h.response({ success: true, address }).code(201);
+        if (available_address) {
+            await available_address.update({
+                street: street,
+                area: area,
+                city: city,
+                state: state,
+                country: country,
+                zip: zip,
+                landmark: landmark,
+                latitude: latitude,
+                longitude: longitude
+            },
+        {
+            where: {
+                id: available_address.id
+            }
+        });
+        }
+        else{
+ const address = await Adresses.create({
+            street: street,
+            area: area,
+            city: city,
+            state: state,
+            country: country,
+            zip: zip,
+            landmark: landmark,
+            latitude: latitude,
+            longitude: longitude,
+            doctor_id: doctor_id
+        });
+        }
+        // await Doctor.update({ address_id: address.id }, { where: { id: doctor_id } });
+        return h.response({ 
+            success: true, 
+            message: 'Address updated successfully',
+            data: address 
+        }).code(201);
     } catch (err) {
         console.error(err);
-        return h.response({ success: false, message: 'Error saving address' }).code(500);
+        return h.response({
+             success: false,
+              message: 'Error saving address'
+             }).code(200);
     }
 };
 
 
 
 const updateAvailability = async (req, h) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
-        const { doctor_id, availability } = req.payload;
-
-        const bulkAvailability = availability.map(slot => ({
-            doctor_id,
-            day: slot.day,
-            start_time: slot.start_time,
-            end_time: slot.end_time
-        }));
-
-        await DoctorAvailability.bulkCreate(bulkAvailability);
-
-        return h.response({ success: true, message: 'Availability updated' }).code(200);
-    } catch (err) {
-        console.error(err);
-        return h.response({ success: false, message: 'Error updating availability' }).code(500);
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) {
+      throw new Error('Session expired');
     }
+
+    const { doctor_id, availability } = req.payload;
+
+    const doctor = await Doctors.findOne({ where: { id: doctor_id } });
+    if (!doctor) {
+      throw new Error('Doctor not found');
+    }
+
+    for (const slot of availability) {
+      const existingSlot = await Doctorsavailability.findOne({
+        where: {
+          doctor_id,
+          day: slot.day,
+          start_time: slot.start_time,
+          end_time: slot.end_time
+        }
+      });
+
+      if (existingSlot) {
+        // Update slot if needed
+        await existingSlot.update({
+          ...slot
+        },
+        {
+          where: {
+            id: existingSlot.id
+          }
+        });
+      } else {
+        // Create new slot
+        await Doctorsavailability.create({
+          doctor_id,
+          day: slot.day,
+          start_time: slot.start_time,
+          end_time: slot.end_time
+        });
+      }
+    }
+
+    return h.response({
+      success: true,
+      message: 'Availability updated successfully',
+      data: availability
+    }).code(200);
+
+  } catch (err) {
+    console.error(err);
+    return h.response({
+      success: false,
+      message: err.message || 'Error updating availability'
+    }).code(500);
+  }
 };
+
 
 const updateStatus = async (req, h) => {
     try {
@@ -149,12 +239,26 @@ const updateStatus = async (req, h) => {
         }
         const { doctor_id, status, verified } = req.payload;
 
-        await Doctor.update({ status, verified }, { where: { id: doctor_id } });
+        await Doctors.update({ 
+            status: status,
+             verified: verified 
+            }, 
+            {
+             where: {
+                 id: doctor_id 
+                } });
 
-        return h.response({ success: true, message: 'Status updated' }).code(200);
+        return h.response({
+             success: true,
+             message: 'Status updated'
+
+             }).code(200);
     } catch (err) {
         console.error(err);
-        return h.response({ success: false, message: 'Error updating status' }).code(500);
+        return h.response({
+             success: false,
+              message: 'Error updating status'
+             }).code(200);
     }
 };
 
@@ -164,3 +268,18 @@ module.exports = {
     updateAvailability,
     updateStatus
 }
+
+
+// Clinic 
+// 1)name 
+// 2)address same table
+// 3)phone clinic
+// 4)email clinic 
+// 5)image clinic, 
+// 6)description
+
+
+// clicninc dpct 
+// 1)dr id
+// 2)clinic id
+// 3) monday start dateandend , monday end

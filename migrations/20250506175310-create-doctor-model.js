@@ -24,7 +24,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       date_of_birth: {
-        type: Sequelize.DATE
+        type: Sequelize.STRING
       },
       phone: {
         type: Sequelize.BIGINT
@@ -63,12 +63,6 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       pan_card_id: {
-        type: Sequelize.INTEGER
-      },
-      availability_id: {
-        type: Sequelize.INTEGER
-      },
-      address_id: {
         type: Sequelize.INTEGER
       },
       status: {

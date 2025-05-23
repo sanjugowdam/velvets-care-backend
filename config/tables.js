@@ -6,7 +6,7 @@ module.exports = {
     Admins: 'admins',
     Banners: 'banners',
     Doctors: 'doctors',
-    Doctorsavailability: 'doctorsavailability',
+    Doctorsavailabilities: 'doctorsavailabilities',
     Adresses: 'addresses',
     Notifications: 'notifications',
     SustainabilityScore: 'sustainability_score',

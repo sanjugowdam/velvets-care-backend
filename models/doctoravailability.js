@@ -2,7 +2,7 @@
 
 const {
   tables: {
-    Doctorsavailability
+    Doctorsavailabilities
   },
   sequelize
 } = require('../config')
@@ -21,7 +21,7 @@ const  Doctors  =require ('../models/doctors')
   }, {
     sequelize,
     paranoid: true,
-    modelName: Doctorsavailability,
+    modelName: Doctorsavailabilities,
   });
 
   DoctorAvailability.belongsTo(Doctors, { foreignKey: 'doctor_id' });

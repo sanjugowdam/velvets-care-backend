@@ -9,7 +9,10 @@ const basicDetailsValidator = Joi.object({
       'string.empty': 'Gender is required',
       'any.required': 'Gender is required',
     }),
-    date_of_birth: Joi.date().allow(null),
+    date_of_birth: Joi.string().required().messages({
+      'string.empty': 'Date of birth is required',
+      'any.required': 'Date of birth is required',
+    }),
     phone: Joi.number().integer().required().messages({
       'any.required': 'Phone number is required',
     }),
@@ -95,9 +98,17 @@ const basicDetailsValidator = Joi.object({
         end_time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
       })
     ).required(),
+    doctor_id: Joi.number().required().messages({
+      'number.base': 'Doctor ID must be a number',
+      'any.required': 'Doctor ID is required',
+    }),
   });
 
   const addressValidator = Joi.object({
+    doctor_id: Joi.number().required().messages({
+      'number.base': 'Doctor ID must be a number',
+      'any.required': 'Doctor ID is required',
+    }),
     address: Joi.string().required().messages({
       'string.empty': 'Address is required',
       'any.required': 'Address is required',

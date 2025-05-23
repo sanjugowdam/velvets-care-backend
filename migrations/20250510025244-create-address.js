@@ -15,6 +15,9 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      doctor_id: {
+        type: Sequelize.INTEGER
+      },
       street: {
         type: Sequelize.STRING
       },
