@@ -8,6 +8,9 @@ module.exports = {
   Doctors: require('./doctors'),
   Doctorsavailability: require('./doctoravailability'),
   Adresses: require('./address'),
+  Clinics: require('./clinics'),
+  Clinicdoctors: require('./clinicdoctors'),
+  
 
 
 

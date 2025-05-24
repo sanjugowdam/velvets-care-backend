@@ -8,6 +8,8 @@ module.exports = {
     Doctors: 'doctors',
     Doctorsavailabilities: 'doctorsavailabilities',
     Adresses: 'addresses',
+    Clinics: 'clinics',
+    Clinicdoctors: 'clinicdoctors',
     Notifications: 'notifications',
     SustainabilityScore: 'sustainability_score',
     UserClicksOnStores: 'user_clicks_on_stores',
