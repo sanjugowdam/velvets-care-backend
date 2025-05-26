@@ -261,12 +261,45 @@ const updateStatus = async (req, h) => {
              }).code(200);
     }
 };
+const doctorlist_user = async (req, h) => {
+    try {
+        // const session_user = req.headers.user;
+        // if (!session_user) {
+        //     throw new Error('Session expired');
+        // }
+        const doctor = await Doctors.findAll({ 
+                include: [
+                    {
+                        model: Adresses
+                    },
+                    {
+                        model: Doctorsavailability
+                    }
+                ],
+            where: {
+                 verified: true
+                 }
+        });
+        return h.response({
+            success: true,
+            message: 'Doctor list fetched successfully',
+            data: doctor
+        }).code(200);
+    } catch (err) {
+        console.error(err);
+        return h.response({
+            success: false,
+            message: 'Error finding doctor'
+        }).code(200);
+    }
+};
 
 module.exports = {
     updateBasicDetails,
     updateAddress,
     updateAvailability,
-    updateStatus
+    updateStatus,
+    doctorlist_user
 }
 
 

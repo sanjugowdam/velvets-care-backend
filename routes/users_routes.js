@@ -5,13 +5,15 @@ const Boom = require('@hapi/boom');
 // src/routes/authRoutes.js
 const {
     UsersControllers: {
-        request_otp,
+        request_otp_login,
+        request_otp_register,
         verify_otp,
         validateusersession,
         logout,
         update_user,
         user_refresh_token,
-        getusers
+        getusers,
+        
     }
 } = require('../controllers');
 const {
@@ -21,10 +23,12 @@ const {
         logout_user,
         update_user_profile,
         user_refresh_token_validator,
-        get_user_list
+        get_user_list,
+        register_user
     },
     HeaderValidator,
 } = require('../validators');
+
 
 
 const tags = ["api", "Users"];
@@ -32,9 +36,9 @@ module.exports = [
 
     {
         method: 'POST',
-        path: '/user/login-register',
+        path: '/user/login',
         options: {
-            description: 'Login and register user',
+            description: 'Login  user',
             tags,
             validate: {
                 payload: login_user,
@@ -43,7 +47,23 @@ module.exports = [
                     throw Boom.badRequest(errors.join(', '));
                 }
             },
-            handler: request_otp,
+            handler: request_otp_login,
+        },
+    },
+        {
+        method: 'POST',
+        path: '/user/register',
+        options: {
+            description: 'register user',
+            tags,
+            validate: {
+                payload: register_user,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+            handler: request_otp_register,
         },
     },
     {

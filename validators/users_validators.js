@@ -6,6 +6,16 @@ const login_user = Joi.object({
         'any.required': 'Phone number is required',
     }),
 })
+const register_user = Joi.object({
+    phone: Joi.string().required().messages({
+        'string.empty': 'Phone number is required',
+        'any.required': 'Phone number is required',
+    }),
+    name: Joi.string().required().messages({
+        'string.empty': 'Name is required',
+        'any.required': 'Name is required',
+    }),
+})
 
 const verify_otp = Joi.object({
     phone: Joi.string().required().messages({
@@ -86,6 +96,7 @@ module.exports = {
     logout_user,
     user_refresh_token_validator,
     get_user_list,
-    googleSignInValidator
+    googleSignInValidator,
+    register_user
 
 }

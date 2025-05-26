@@ -143,6 +143,8 @@ const basicDetailsValidator = Joi.object({
     }),
   });
 
+
+
 module.exports = {
     basicDetailsValidator,
     statusValidator,

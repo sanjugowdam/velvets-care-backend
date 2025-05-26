@@ -12,7 +12,7 @@ const {
 
 const { TwilioFunctions, FileFunctions } = require('../helpers')
 
-const request_otp = async (req, res) => {
+const request_otp_login = async (req, res) => {
     try {
 
         const { phone } = req.payload;
@@ -25,31 +25,16 @@ const request_otp = async (req, res) => {
         const otp = await OTPFunctions.getOTPByLength(4);
         console.log("login otp:", otp);
         if (!user) {
-            const otpCode = await Otps.create({
-                otp: otp,
-                otp_time: Date.now()
-            })
-            const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
-            if (!sent) {
-                throw new Error('OTP not sent');
-            }
-            await Users.create({
-                phone: phone,
-                otp_id: otpCode.id
-            })
-            return res.response({
-                success: true,
-                message: 'OTP sent successfully',
-            })
+            throw new Error('User not found');
         }
         const otpCode = await Otps.create({
             otp: otp,
             otp_time: Date.now()
         })
-        const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
-        if (!sent) {
-            throw new Error('OTP not sent');
-        }
+        // const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+        // if (!sent) {
+        //     throw new Error('OTP not sent');
+        // }
         await Users.update({
             otp_id: otpCode.id
         }, {
@@ -59,6 +44,50 @@ const request_otp = async (req, res) => {
         })
         return res.response({
             success: true,
+            otp: otpCode.otp,
+            message: 'OTP sent successfully',
+        })
+    }
+    catch (error) {
+        console.log(error);
+        return res.response({
+            success: true,
+            message: error.message,
+        })
+
+    }
+}
+
+const request_otp_register = async (req, res) => {
+    try {
+        const { phone, name } = req.payload;
+        const user = await Users.findOne({
+            where: {
+                phone: phone
+            },
+            raw: true
+        })
+        const otp = await OTPFunctions.getOTPByLength(4);
+        console.log("register otp:", otp);
+        if (user) {
+            throw new Error('User already exists');
+        }
+        const otpCode = await Otps.create({
+            otp: otp,
+            otp_time: Date.now()
+        })
+        // const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+        // if (!sent) {
+        //     throw new Error('OTP not sent');
+        // }
+        await Users.create({
+            phone: phone,
+            name: name,
+            otp_id: otpCode.id
+        })
+        return res.response({
+            success: true,
+            otp: otpCode.otp,
             message: 'OTP sent successfully',
         })
     }
@@ -123,6 +152,11 @@ const verify_otp = async (req, res) => {
         }, {
             where: {
                 id: user.id
+            }
+        })
+        await Otps.destroy({
+            where: {
+                id: user.otp_id
             }
         })
         return res.response({
@@ -404,14 +438,16 @@ const googleSignIn = async (request, h) => {
   
 
 module.exports = {
-    request_otp,                                                
+    request_otp_login, 
+    request_otp_register,                                               
     verify_otp,
     validateusersession,
     logout,
     update_user,
     user_refresh_token,
     getusers,
- googleSignIn 
+ googleSignIn ,
+
 
     
 }

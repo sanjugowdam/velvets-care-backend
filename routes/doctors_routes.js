@@ -8,7 +8,9 @@ const {
         updateBasicDetails,
         updateAddress,
         updateAvailability,
-        updateStatus
+        updateStatus,
+        doctorlist_user
+
     }
 } = require('../controllers');
 const {
@@ -118,5 +120,27 @@ module.exports = [
             },
             handler: updateStatus
         }
+    },
+   {
+    method: 'GET',
+    path: '/doctor/list',
+    options: {
+        description: 'Get list of doctors',
+        tags,
+        pre: [
+            SessionValidator
+        ],
+        validate: {
+            headers: HeaderValidator,
+            failAction: (request, h, err) => {
+                const errors = err.details.map(e => e.message);
+                throw Boom.badRequest(errors.join(', '));
+            }
+        },
+        handler: doctorlist_user
     }
+}
+
+    
+
 ];

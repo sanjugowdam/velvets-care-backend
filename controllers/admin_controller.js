@@ -27,7 +27,7 @@ const send_otp_admin = async (req, res) => {
         const receiver_mail = email;
         const receiver_name = 'Admin';
         const sender_mail = process.env.MAIL_USER;
-        const sender_name = 'Jurysoft';
+        const sender_name = 'Velvets Care';
         const subject = 'OTP for admin Login';
         const html = `
                     <p>Dear User,</p>
@@ -42,7 +42,7 @@ const send_otp_admin = async (req, res) => {
 
                     <br/>
                     <p>Thank you,<br/>
-                    <b>JurySoft Team</b></p>
+                    <b>Velvets Care Team</b></p>
                     `;
 
         await MailFunctions.sendHtmlMailToSingleReceiver(receiver_mail, receiver_name, sender_mail, sender_name, subject, html);
