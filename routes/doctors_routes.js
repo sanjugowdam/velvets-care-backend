@@ -140,7 +140,4 @@ module.exports = [
         handler: doctorlist_user
     }
 }
-
-    
-
 ];
