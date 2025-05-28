@@ -22,9 +22,9 @@ const doctor_request_otp = async (req, res) => {
             });
 
             // const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
-            if (!sent) {
-                throw new Error('OTP not sent');
-            }
+            // if (!sent) {
+            //     throw new Error('OTP not sent');
+            // }
             await Doctors.create({
                 phone: phone,
                 otp_id: otpCode.id
