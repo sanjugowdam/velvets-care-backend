@@ -13,7 +13,9 @@ module.exports = {
     AdminValidator: require('./admin_validator'),
     BannerValidator: require('./banner_validator'),
     DoctorValidator: require('./doctor_validator'),
-    DoctorAuthValidator: require('./doctor_auth_validator')
+    DoctorAuthValidator: require('./doctor_auth_validator'),
+    ClinicValidator: require('./clinic_validator'),
+    // AppointmentValidator: require('./appointment_validator')
 
 
 }

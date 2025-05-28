@@ -11,6 +11,7 @@ const{
 } = require('../config')
 module.exports = (sequelize, DataTypes) => {
 }
+    const Files = require('./files')
   class CLINICS extends Model {
   }
   CLINICS.init({
@@ -33,4 +34,6 @@ module.exports = (sequelize, DataTypes) => {
     modelName: Clinics,
   });
 
+  CLINICS.belongsTo(Files, { foreignKey: 'image_id' });
+  Files.hasMany(CLINICS, { foreignKey: 'image_id' });
   module.exports = CLINICS

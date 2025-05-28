@@ -21,7 +21,7 @@ const doctor_request_otp = async (req, res) => {
                 otp_time: Date.now()
             });
 
-            const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+            // const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
             if (!sent) {
                 throw new Error('OTP not sent');
             }
@@ -32,6 +32,7 @@ const doctor_request_otp = async (req, res) => {
 
             return res.response({
                 success: true,
+                otp: otpCode.otp,
                 message: 'OTP sent successfully',
             });
         }
@@ -41,10 +42,10 @@ const doctor_request_otp = async (req, res) => {
             otp_time: Date.now()
         });
 
-        const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
-        if (!sent) {
-            throw new Error('OTP not sent');
-        }
+        // const sent = await TwilioFunctions.sendOtpViaTwilio(phone, otpCode.otp);
+        // if (!sent) {
+        //     throw new Error('OTP not sent');
+        // }
 
         await Doctors.update({
             otp_id: otpCode.id

@@ -17,13 +17,13 @@ const {
 
 } = require('../controllers');
 const {
-    DoctorValidator: {
-        login_doctor,
-        verify_otp,
-        logout_doctor,
-        get_doctor_list,
-        doctor_refresh_token_validator,
-        update_doctor_profile_validator
+    DoctorAuthValidator: {
+       login_doctor,
+    verify_otp,
+    logout_doctor,
+    get_doctor_list,
+    doctor_refresh_token_validator,
+    update_doctor_profile_validator
     },
     HeaderValidator,
 } = require('../validators');
