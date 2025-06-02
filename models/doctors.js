@@ -41,20 +41,20 @@ const Files = require('./files')
     modelName: Doctors,
   });
   
-  DoctorModel.belongsTo(Files, { foreignKey: 'registration_certificate_id' });
-  Files.hasMany(DoctorModel, { foreignKey: 'registration_certificate_id' });
+  DoctorModel.belongsTo(Files, { foreignKey: 'registration_certificate_id', as: 'registration_certificate' });
+  Files.hasMany(DoctorModel, { foreignKey: 'registration_certificate_id', as: 'registration_certificate' });
   
-  DoctorModel.belongsTo(Files, { foreignKey: 'medical_degree_certificate_id' });
-  Files.hasMany(DoctorModel, { foreignKey: 'medical_degree_certificate_id' });
+  DoctorModel.belongsTo(Files, { foreignKey: 'medical_degree_certificate_id', as: 'medical_degree_certificate' });
+  Files.hasMany(DoctorModel, { foreignKey: 'medical_degree_certificate_id', as: 'medical_degree_certificate' });
   
-  DoctorModel.belongsTo(Files, { foreignKey: 'profile_image_id' });
-  Files.hasMany(DoctorModel, { foreignKey: 'profile_image_id' });
+  DoctorModel.belongsTo(Files, { foreignKey: 'profile_image_id', as: 'profile_image' });
+  Files.hasMany(DoctorModel, { foreignKey: 'profile_image_id', as: 'profile_image' });
   
-  DoctorModel.belongsTo(Files, { foreignKey: 'government_id' });
-  Files.hasMany(DoctorModel, { foreignKey: 'government_id' });
+  DoctorModel.belongsTo(Files, { foreignKey: 'government_id', as: 'government_id_file' });
+  Files.hasMany(DoctorModel, { foreignKey: 'government_id', as: 'government_id_file' });
   
-  DoctorModel.belongsTo(Files, { foreignKey: 'pan_card_id' });
-  Files.hasMany(DoctorModel, { foreignKey: 'pan_card_id' });
+  DoctorModel.belongsTo(Files, { foreignKey: 'pan_card_id', as: 'pan_card_file' });
+  Files.hasMany(DoctorModel, { foreignKey: 'pan_card_id', as: 'pan_card_file' });
   
  
   

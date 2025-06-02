@@ -331,6 +331,35 @@ const doctorlist = async (req, h) => {
             where: filter
         });
         const doctors = await Doctors.findAll({
+            attributes: { exclude: ['access_token', 'refresh_token'] },
+            include: [
+                {
+                    model: Adresses
+                },
+                {
+                    model: Doctorsavailability
+                },
+                {
+                    model: Files,
+                    as:'registration_certificate'
+                },
+                {
+                    model: Files,
+                    as:'medical_degree_certificate'
+                },
+                {
+                    model: Files,
+                    as:'profile_image'
+                },
+                {
+                    model: Files,
+                    as:'government_id'
+                },
+                {
+                    model: Files,
+                    as:'pan_card'
+                }
+            ],
             where: filter,
             limit: limit,
             ...offset ? { offset } : {},
