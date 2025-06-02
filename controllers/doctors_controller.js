@@ -353,11 +353,11 @@ const doctorlist = async (req, h) => {
                 },
                 {
                     model: Files,
-                    as:'government_id'
+                    as:'government_id_file'
                 },
                 {
                     model: Files,
-                    as:'pan_card'
+                    as:'pan_card_file'
                 }
             ],
             where: filter,
