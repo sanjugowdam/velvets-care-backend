@@ -143,12 +143,32 @@ const basicDetailsValidator = Joi.object({
     }),
   });
 
+const fecthdoctors_admin = Joi.object({
+  years_of_experience: Joi.number().integer().allow(null).messages({
+    'number.base': 'Years of experience must be a number',
+  }),
+  searchquery: Joi.string().allow(null).messages({
+    'string.empty': 'Search query is required',
+  }),
+  specialization: Joi.string().allow(null).messages({
+    'string.empty': 'Specialization is required',
+  }),
+  page: Joi.number().integer().allow(null).messages({
+    'string.empty': 'Page is required',
+    'any.required': 'Page is required',
+  }),
+  limit: Joi.number().integer().allow(null).messages({
+    'string.empty': 'Limit is required',
+    'any.required': 'Limit is required',
+  }),
 
+});
 
 module.exports = {
     basicDetailsValidator,
     statusValidator,
     availabilityValidator,
     addressValidator,
+    fecthdoctors_admin
 
 };

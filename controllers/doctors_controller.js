@@ -16,6 +16,7 @@ const {
 const { TwilioFunctions, FileFunctions } = require('../helpers');
 const { ComplianceInquiriesContextImpl } = require('twilio/lib/rest/trusthub/v1/complianceInquiries');
 const { default: ClientCapability } = require('twilio/lib/jwt/ClientCapability');
+const { off } = require('../config/mailer');
 
 const updateBasicDetails = async (req, h) => {
     try {
@@ -294,12 +295,70 @@ const doctorlist_user = async (req, h) => {
     }
 };
 
+const doctorlist = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const { specialization, years_of_experience, searchquery, page, limit } = req.query;
+        let offset;
+        if(page && limit){
+           offset = (page - 1) * limit
+        }
+        let filter = {};
+        if (searchquery) {
+            filter = {
+                [Op.or]: [
+                    { full_name: { [Op.like]: `%${searchquery}%` } },
+                    { phone: { [Op.like]: `%${searchquery}%` } },
+                ],
+            };
+        }
+        if (specialization) {
+            filter = {
+                ...filter,
+                specialization: specialization
+            }
+        }
+        if (years_of_experience) {
+            filter = {
+            ...filter,
+            years_of_experience : years_of_experience
+            }
+        }
+        const doctor_count = await Doctors.count({
+            where: filter
+        });
+        const doctors = await Doctors.findAll({
+            where: filter,
+            limit: limit,
+            ...offset ? { offset } : {},
+        });
+            return h.response({
+                success: true,
+                message: 'Doctors fetched successfully',
+                data: doctors,
+                total: doctor_count,
+            }).code(200);
+        }
+     catch (err) {
+        console.error(err);
+        return h.response({
+            success: false,
+            message: err.message
+        }).code(200);
+    }
+}
+
 module.exports = {
     updateBasicDetails,
     updateAddress,
     updateAvailability,
     updateStatus,
-    doctorlist_user
+    doctorlist_user,
+    doctorlist
+
 }
 
 

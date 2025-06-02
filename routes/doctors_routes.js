@@ -9,7 +9,8 @@ const {
         updateAddress,
         updateAvailability,
         updateStatus,
-        doctorlist_user
+        doctorlist_user,
+        doctorlist
 
     }
 } = require('../controllers');
@@ -19,6 +20,7 @@ const {
         statusValidator,
         availabilityValidator,
         addressValidator,
+        fecthdoctors_admin
     },
     HeaderValidator,
 } = require('../validators');
@@ -139,5 +141,26 @@ module.exports = [
         },
         handler: doctorlist_user
     }
-}
+},
+
+{
+    method: 'GET',
+    path: '/admin/doctor/list',
+    options: {
+        description: 'Get list of doctors',
+        tags,
+        pre: [
+            SessionValidator
+        ],
+        validate: {
+            headers: HeaderValidator,
+            query: fecthdoctors_admin,
+            failAction: (request, h, err) => {
+                const errors = err.details.map(e => e.message);
+                throw Boom.badRequest(errors.join(', '));
+            }
+        },
+        handler: doctorlist
+    }
+},
 ];
