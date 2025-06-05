@@ -28,8 +28,9 @@ const updateBasicDetails = async (req, h) => {
             full_name, gender, date_of_birth, phone, email,
             specialization, years_of_experience, registration_number,
             registration_certificate, medical_degree_certificate,
-            consultation_fee, consultation_modes, languages_spoken
+            consultation_fee, consultation_modes, languages_spoken,profile_image, government_id, pan_card
         } = req.payload;
+        console.log(req.payload, "payload");
         const existing_doctor = await Doctors.findOne({
             where: {
                 [Op.or]: [
@@ -45,10 +46,45 @@ const updateBasicDetails = async (req, h) => {
         // File Uploads
         let regCertFileId = null;
         let degreeCertFileId = null;
+        let profileFileId = null;
+        let govFileId = null;
+        let panFileId = null;
+
+        if (profile_image) {
+            const uploadedfile = await FileFunctions.uploadFile(req, profile_image, 'uploads/profile_images/');
+            const profileFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            profileFileId = profileFile.id;
+        }
+
+        if (government_id) {
+            const uploadedfile = await FileFunctions.uploadFile(req, government_id, 'uploads/government_ids/');
+            const govFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            govFileId = govFile.id;
+        }
+
+        if (pan_card) {
+            const uploadedfile = await FileFunctions.uploadFile(req, pan_card, 'uploads/pan_cards/');
+            const panFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            panFileId = panFile.id;
+        }
 
         if (registration_certificate) {
-            const regPath = await FileFunctions.uploadFile(req, registration_certificate, 'uploads/registration_certificates/');
-            const uploadedfile = await FileFunctions.uploadFile(req, image, regPath);
+            const uploadedfile = await FileFunctions.uploadFile(req, registration_certificate, 'uploads/registration_certificates/');
             const regFile = await Files.create({
                 file_url: uploadedfile.file_url,
                 extension: uploadedfile.extension,
@@ -59,8 +95,7 @@ const updateBasicDetails = async (req, h) => {
         }
 
         if (medical_degree_certificate) {
-            const degreePath = await FileFunctions.uploadFile(req, medical_degree_certificate, 'uploads/medical_degree_certificates/');
-            const uploadedfile = await FileFunctions.uploadFile(req, image, degreePath);
+            const uploadedfile = await FileFunctions.uploadFile(req, medical_degree_certificate, 'uploads/medical_degree_certificates/');
             const degreeFile = await Files.create({
                 file_url: uploadedfile.file_url,
                 extension: uploadedfile.extension,
@@ -83,7 +118,10 @@ const updateBasicDetails = async (req, h) => {
             medical_degree_certificate_id: degreeCertFileId,
             consultation_fee,
             consultation_modes,
-            languages_spoken
+            languages_spoken,
+            profile_image_id: profileFileId,
+            government_id: govFileId,
+            pan_card_id: panFileId
         });
 
         return h.response({
