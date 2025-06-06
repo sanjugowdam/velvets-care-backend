@@ -93,6 +93,9 @@ const doctor_verify_otp = async (req, res) => {
             },
             raw: true
         });
+        if(!otpCode) {
+         throw new Error('OTP already used or expired');
+        }
 
         const otpTime = new Date(otpCode.otp_time);
         const currentTime = new Date();
