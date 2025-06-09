@@ -10,6 +10,12 @@ module.exports = {
   Adresses: require('./address'),
   Clinics: require('./clinics'),
   Clinicdoctors: require('./clinicdoctors'),
+  Appointments: require('./appointment'),
+  // Notifications: require('./notifications'),
+  // SustainabilityScore: require('./sustainability_score'),
+  // UserClicksOnStores: require('./user_clicks_on_stores'),
+  // UserSearchHistory: require('./user_search_history'),
+  // UserSearchPreference: require('./user_search_preference')
   
 
 

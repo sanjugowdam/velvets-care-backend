@@ -10,6 +10,7 @@ module.exports = {
     Adresses: 'addresses',
     Clinics: 'clinics',
     Clinicdoctors: 'clinicdoctors',
+    Appointments: 'appointments',
     Notifications: 'notifications',
     SustainabilityScore: 'sustainability_score',
     UserClicksOnStores: 'user_clicks_on_stores',

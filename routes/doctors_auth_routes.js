@@ -27,7 +27,7 @@ const {
     },
     HeaderValidator,
 } = require('../validators');
-
+;
 
 const tags = ["api", "Doctor_Auth"];
 

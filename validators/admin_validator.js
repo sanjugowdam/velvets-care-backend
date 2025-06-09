@@ -32,9 +32,19 @@ const update_admin_profile = Joi.object({
       
     }),
 })
-
+const Create_admin = Joi.object({
+    name: Joi.string().required().messages({
+        'string.empty': 'Name is required',
+        'any.required': 'Name is required',
+    }),
+    email: Joi.string().required().messages({
+        'string.empty': 'Email is required',
+        'any.required': 'Email is required',
+    }),
+})
 module.exports = {
     login_admin,
     verify_otp_admin_validotor,
-    update_admin_profile
+    update_admin_profile,
+    Create_admin
 }
