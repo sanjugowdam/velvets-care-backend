@@ -6,5 +6,6 @@ module.exports = {
     FileFunctions: require('./file_functions'),
     OTPFunctions: require('./otp'),
     TwilioFunctions: require('./twilio'),
-    GoogleAuthFunctions: require('./google_auth')
+    GoogleAuthFunctions: require('./google_auth'),
+    RazorpayFunctions: require('./razorpay')
 }

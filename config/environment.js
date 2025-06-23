@@ -17,4 +17,6 @@ module.exports = {
     MAIL_PORT: process.env.MAIL_PORT,
     MAIL_USER: process.env.MAIL_USER,
     MAIL_PASS: process.env.MAIL_PASS,
+    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
+    RAZORPAY_SECRET: process.env.RAZORPAY_SECRET
 }; 

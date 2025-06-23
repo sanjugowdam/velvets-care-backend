@@ -6,5 +6,5 @@ module.exports = [
     ...require('./doctors_routes'),
     ...require('./doctors_auth_routes'),
     ...require('./clinic_routes'),
-    // ...require('./appointment_routes')
+    ...require('./appointment_routes')
 ]

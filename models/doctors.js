@@ -26,6 +26,7 @@ const Files = require('./files')
     medical_degree_certificate_id: DataTypes.INTEGER,
     profile_image_id: DataTypes.INTEGER,
     consultation_fee: DataTypes.FLOAT,
+    total_earnings: DataTypes.FLOAT,
     consultation_modes: DataTypes.STRING,
     languages_spoken: DataTypes.STRING,
     government_id: DataTypes.INTEGER,

@@ -19,7 +19,15 @@ const doctors  =require ('../models/doctors')
     appointment_date: DataTypes.STRING,
     appointment_time: DataTypes.STRING,
     reason: DataTypes.STRING,
-    status: DataTypes.STRING
+    status: DataTypes.STRING,
+    payment_status: DataTypes.STRING,
+    payment_id: DataTypes.STRING,
+    order_id: DataTypes.STRING,
+    payment_signature: DataTypes.TEXT,
+    cancel_reason: DataTypes.STRING,
+    consultation_modes: DataTypes.STRING,
+    cancel_by: DataTypes.STRING,
+    cunsultation_fee: DataTypes.FLOAT
   }, {
     sequelize,
     paranoid: true,

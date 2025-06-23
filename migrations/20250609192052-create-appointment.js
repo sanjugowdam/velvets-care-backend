@@ -30,7 +30,34 @@ module.exports = {
       reason: {
         type: Sequelize.STRING
       },
+      appointment_mode: {
+        type: Sequelize.STRING
+      },
+      payment_status: {
+        type: Sequelize.STRING
+      },
+      payment_id: {
+        type: Sequelize.STRING
+      },
+      order_id: {
+        type: Sequelize.STRING
+      },
+      payment_signature: {
+        type: Sequelize.TEXT
+      },
       status: {
+        type: Sequelize.STRING
+      },
+      cancel_reason: {
+        type: Sequelize.STRING
+      },
+      cancel_by: {
+        type: Sequelize.STRING
+      },
+      consultation_modes: {
+        type: Sequelize.STRING
+      },
+      cunsultation_fee: {
         type: Sequelize.STRING
       },
       createdAt: {
