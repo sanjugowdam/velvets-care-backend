@@ -16,9 +16,7 @@ const {
     AppointmentValidator: {
      appointmentValidator,
     razorpayPaymentValidator,
-    updateAppointmentValidator,
     cancelAppointmentValidator,
-    ApproveAppointmentValidator,
     fecthAppointmentsValidator,
     fetchdoctorAppointmentsValidator,
     appointment,
@@ -26,8 +24,10 @@ const {
     HeaderValidator,
 } = require('../validators');
 const {
-    SessionValidator, SessionValidatorAdmin
-} = require('../middlewares')
+    SessionValidator
+} = require('../middlewares');
+const Joi = require('joi');
+const { createRazorpayOrder } = require('../helpers/razorpay');
 
 const tags = ["api", "Appointment"];
 
@@ -145,7 +145,6 @@ module.exports = [
             validate: {
                 headers: HeaderValidator,
                 params: appointment,
-                payload: ApproveAppointmentValidator,
                 failAction: (request, h, err) => {
                                     const errors = err.details.map(e => e.message);
                                     throw Boom.badRequest(errors.join(', '));
@@ -166,7 +165,6 @@ module.exports = [
             validate: {
                 headers: HeaderValidator,
                 params: appointment,
-                payload: ApproveAppointmentValidator,
                 failAction: (request, h, err) => {
                                     const errors = err.details.map(e => e.message);
                                     throw Boom.badRequest(errors.join(', '));
@@ -175,4 +173,27 @@ module.exports = [
         },
         handler: DoctorApproval,
     },
+
+    {
+        method: 'GET',
+        path: '/razorpay',
+        options: {
+            description: 'Get all appointments',
+            tags,
+            validate: {
+                query: Joi.object({
+                    amount: Joi.number().required()
+                }),
+                failAction: (request, h, err) => {
+                                    const errors = err.details.map(e => e.message);
+                                    throw Boom.badRequest(errors.join(', '));
+                                }
+            },
+        },
+        handler: async (request, h) => {
+            const amount = request.query.amount;
+            const order = await createRazorpayOrder(amount);
+            return h.response(order).code(200);
+        }
+    }
 ]

@@ -2,7 +2,8 @@ const {
     Files,
     Appointments,
     Users,
-    Doctors
+    Doctors,
+    Doctorsavailability
 
 } = require('../models')
 const {
@@ -22,7 +23,11 @@ const precheckAndCreateOrder = async (req, res) => {
         const { doctor_id, appointment_date, appointment_time } = req.payload;
 
         const user = await Users.findOne({ where: { id: session_user.user_id } });
-        const doctor = await Doctors.findOne({ where: { id: doctor_id } });
+        const doctor = await Doctors.findOne({
+            where:
+                { id: doctor_id },
+            raw: true
+        });
         if (!user || !doctor) throw new Error('Invalid user or doctor');
 
         const appointmentDate = new Date(appointment_date);
@@ -59,7 +64,7 @@ const precheckAndCreateOrder = async (req, res) => {
             throw new Error('Appointments must be booked for a future date, not today or past');
         }
 
-        const amount = Doctors.consultation_fee || 500;
+        const amount = doctor.consultation_fee || 500;
         const order = await RazorpayFunctions.createRazorpayOrder(amount);
 
         return res.response({
@@ -89,24 +94,16 @@ const confirmAppointment = async (req, res) => {
             consultation_fee,
             consultation_modes
         } = req.payload;
-
-        // Signature verification
-        const generated_signature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_SECRET)
-            .update(`${order_id}|${payment_id}`)
-            .digest('hex');
-
-        if (generated_signature !== razorpay_signature) {
-            throw new Error('Invalid payment signature');
-        }
-
+        //    const captured_payment = await RazorpayFunctions.capturePayment(consultation_fee, payment_id);
+        //    console.log(captured_payment);
+        //    if(!captured_payment) throw new Error('Razorpay payment capture failed');
         const appointment = await Appointments.create({
             doctor_id,
             patient_id: session_user.user_id,
             appointment_date,
             appointment_time,
             reason,
-            status,
+            status: 'approved',
             payment_id,
             order_id,
             payment_signature,
@@ -179,157 +176,146 @@ const getDoctorAppointments = async (req, res) => {
         return res.response({
             success: false,
             message: error.message || 'Failed to fetch appointments'
-        }).code(400);
+        }).code(200);
     }
 };
 
 
 const DoctorApproval = async (req, h) => {
-  try {
-    const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
 
-    const doctor_id = session_user.user_id;
-    const appointmentId = req.params.id;
-    const { status } = req.payload;
+        const doctor_id = session_user.user_id;
+        const appointmentId = req.params.id;
+        const appointment = await Appointments.findByPk(appointmentId);
+        if (!appointment) {
+            throw new Error('Appointment not found');
+        }
+        if (appointment.doctor_id !== doctor_id) {
+            throw new Error('Unauthorized: This is not your appointment');
+        }
+        if (appointment.status !== 'pending') {
+            throw new Error(`Only pending appointments can be approved. Current status: ${appointment.status}`);
+        }
+        // Update status to approved
+        await Appointments.update({
+            status: 'approved'
+        }
+            , { where: { id: appointmentId } });
 
-    if (status !== 'approved') {
-      throw new Error('Invalid status. Only "approved" is allowed.');
+        return h.response({
+            success: true,
+            message: 'Appointment approved successfully',
+            data: appointment
+        });
+    } catch (error) {
+        console.error(error);
+        return h.response({
+            success: false,
+            message: error.message
+        }).code(200);
     }
-    const appointment = await Appointments.findByPk(appointmentId);
-    if (!appointment) {
-      throw new Error('Appointment not found');
-    }
-    if (appointment.doctor_id !== doctor_id) {
-      throw new Error('Unauthorized: This is not your appointment');
-    }
-
-    if (appointment.status !== 'pending') {
-      throw new Error(`Only pending appointments can be approved. Current status: ${appointment.status}`);
-    }
-    // Update status to approved
-    await appointment.update({ status: 'approved' });
-
-    return h.response({
-      success: true,
-      message: 'Appointment approved successfully',
-      data: appointment
-    });
-  } catch (error) {
-    console.error(error);
-    return h.response({
-      success: false,
-      message: error.message
-    }).code(200);
-  }
 };
 
 const doctoreject = async (req, h) => {
-  try {
-    const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
 
-    const doctor_id = session_user.user_id;
-    const appointmentId = req.params.id;
-    const { status, cnacel_reason } = req.payload;
+        const doctor_id = session_user.user_id;
+        const appointmentId = req.params.id;
+        const {  cancel_reason } = req.payload;
 
-    const appointment = await Appointments.findByPk(appointmentId);
-    if (!appointment) {
-      throw new Error('Appointment not found');
+        const appointment = await Appointments.findByPk(appointmentId);
+        if (!appointment) {
+            throw new Error('Appointment not found');
+        }
+        if (appointment.doctor_id !== doctor_id) {
+            throw new Error('Unauthorized: This is not your appointment');
+        }
+
+        if (appointment.status !== 'pending') {
+            throw new Error(`Only pending appointments can be rejected. Current status: ${appointment.status}`);
+        }
+        // Update status to rejected
+        await appointment.update({
+            status: 'rejected',
+            cancel_reason,
+            cancel_by: 'doctor'
+
+        });
+        return h.response({
+            success: true,
+            message: 'Appointment rejected successfully',
+            data: appointment
+        });
+    } catch (error) {
+        console.error(error);
+        return h.response({
+            success: false,
+            message: error.message
+        }).code(200);
     }
-    if (appointment.doctor_id !== doctor_id) {
-      throw new Error('Unauthorized: This is not your appointment');
-    }
-
-    if (appointment.status !== 'pending') {
-      throw new Error(`Only pending appointments can be rejected. Current status: ${appointment.status}`);
-    }
-    // Update status to rejected
-    await appointment.update({
-         status: status,
-         cancel_reason: cnacel_reason,
-         cancel_by: 'doctor'
-
-         });
-    return h.response({
-      success: true,
-      message: 'Appointment rejected successfully',
-      data: appointment
-    });
-  } catch (error) {
-    console.error(error);
-    return h.response({
-      success: false,
-      message: error.message
-    }).code(200);
-  }
 }
 
 const cancelAppointmentByUser = async (req, h) => {
-  try {
-    const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
 
-    const user_id = session_user.user_id;
-    const appointmentId = req.params.id;
-    const { status, cancel_reason } = req.payload;
+        const user_id = session_user.user_id;
+        const appointmentId = req.params.id;
+        const {  cancel_reason } = req.payload;
 
-    const appointment = await Appointments.findByPk(appointmentId);
-    if (!appointment) {
-      throw new Error('Appointment not found');
+        const appointment = await Appointments.findByPk(appointmentId);
+        if (!appointment) {
+            throw new Error('Appointment not found');
+        }
+
+        if (appointment.patient_id !== user_id) {
+            throw new Error('Unauthorized: This is not your appointment');
+        }
+
+        // ✅ Prevent canceling on the same day
+        const today = new Date().toISOString().split('T')[0];
+        if (appointment.appointment_date === today) {
+            throw new Error('Cannot cancel appointment on the same day');
+        }
+
+        // ✅ Prevent duplicate cancellation
+        if (appointment.status === 'cancelled') {
+            throw new Error('Appointment is already cancelled');
+        }
+
+        // ✅ Cancel the appointment
+        await appointment.update({
+            status: 'cancelled',
+            cancel_reason: cancel_reason,
+            cancel_by: 'patient'
+        });
+
+        return h.response({
+            success: true,
+            message: 'Appointment cancelled successfully',
+            data: appointment
+        });
+
+    } catch (error) {
+        console.error(error);
+        return h.response({
+            success: false,
+            message: error.message
+        }).code(400);
     }
-
-    if (appointment.patient_id !== user_id) {
-      throw new Error('Unauthorized: This is not your appointment');
-    }
-
-    // ✅ Prevent canceling on the same day
-    const today = new Date().toISOString().split('T')[0];
-    if (appointment.appointment_date === today) {
-      throw new Error('Cannot cancel appointment on the same day');
-    }
-
-    // ✅ Prevent duplicate cancellation
-    if (appointment.status === 'cancelled') {
-      throw new Error('Appointment is already cancelled');
-    }
-
-    // ✅ Cancel the appointment
-    await appointment.update({
-      status: status,
-      cancel_reason: cancel_reason,
-      cancel_by: 'patient'
-    });
-
-    return h.response({
-      success: true,
-      message: 'Appointment cancelled successfully',
-      data: appointment
-    });
-
-  } catch (error) {
-    console.error(error);
-    return h.response({
-      success: false,
-      message: error.message
-    }).code(400);
-  }
 };
 
 const getadminAppointments = async (req, res) => {
     try {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
-        const {page, limit, searchquery, doctor_id, status, date, patient_id} = req.query;
+        const { page, limit, searchquery, doctor_id, status, date, patient_id } = req.query;
         let filter = {};
-        if (searchquery) {
-            filter = {
-                [Op.or]: [
-                    { full_name: { [Op.like]: `%${searchquery}%` } },
-                    { phone: { [Op.like]: `%${searchquery}%` } },
-                ],
-            };
-        }
         if (doctor_id) {
             filter = {
                 ...filter,

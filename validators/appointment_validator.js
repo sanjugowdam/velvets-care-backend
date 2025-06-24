@@ -21,10 +21,6 @@ const appointmentValidator = Joi.object({
         'string.empty': 'Reason is required',
         'any.required': 'Reason is required',
     }),
-    status: Joi.string().required().messages({
-        'string.empty': 'Status is required',
-        'any.required': 'Status is required',
-    }),
     payment_id: Joi.string().required().messages({
         'string.empty': 'Payment status is required',
         'any.required': 'Payment status is required',
@@ -95,16 +91,6 @@ const cancelAppointmentValidator = Joi.object({
         'string.empty': 'Reason is required',
         'any.required': 'Reason is required',
     }),
-    status: Joi.string().required().messages({
-        'string.empty': 'Status is required',
-        'any.required': 'Status is required',
-    }),
-})
-const ApproveAppointmentValidator = Joi.object({
-    status: Joi.string().required().messages({
-        'string.empty': 'Status is required',
-        'any.required': 'Status is required',
-    }),
 })
 
 const fecthAppointmentsValidator = Joi.object({
@@ -119,9 +105,6 @@ const fecthAppointmentsValidator = Joi.object({
     limit: Joi.number().allow(null).messages({
         'string.empty': 'Limit is required',
         'any.required': 'Limit is required',
-    }),
-    searchquery: Joi.string().allow(null).messages({
-        'string.empty': 'Search query is required',
     }),
     doctor_id: Joi.number().allow(null).messages({
         'string.empty': 'Doctor ID is required',
@@ -157,10 +140,9 @@ module.exports = {
     razorpayPaymentValidator,
     updateAppointmentValidator,
     cancelAppointmentValidator,
-    ApproveAppointmentValidator,
     fecthAppointmentsValidator,
     fetchdoctorAppointmentsValidator,
     appointment,
-    
+
     
 }
