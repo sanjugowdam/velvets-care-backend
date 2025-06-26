@@ -10,7 +10,7 @@ const {
     Op
 } = require('sequelize')
 const {
-    FileFunctions, JWTFunctions, RazorpayFunctions
+    FileFunctions, JWTFunctions, RazorpayFunctions, AgoraFunctions
 } = require('../helpers');
 
 
@@ -306,7 +306,7 @@ const cancelAppointmentByUser = async (req, h) => {
         return h.response({
             success: false,
             message: error.message
-        }).code(400);
+        }).code(200);
     }
 };
 
@@ -373,6 +373,41 @@ const getadminAppointments = async (req, res) => {
         }).code(200);
     }
 }
+const getRtcToken = async (req, h) => {
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
+
+    const appointmentId = req.params.id;
+    const userId = session_user.user_id;
+
+    const appointment = await Appointments.findByPk(appointmentId);
+    if (!appointment) throw new Error('Appointment not found');
+    if (appointment.status !== 'approved') throw new Error('Appointment not approved');
+
+    if (![appointment.doctor_id, appointment.patient_id].includes(userId)) {
+      throw new Error('Unauthorized access');
+    }
+
+    const channelName = `appointment_${appointmentId}`;
+    const token = AgoraFunctions.generateRtcToken(channelName, userId);
+
+    return h.response({
+      success: true,
+      token,
+      channelName,
+      uid: userId,
+      consultation_mode: appointment.consultation_mode
+    });
+
+  } catch (err) {
+    console.error(err);
+    return h.response({
+      success: false,
+      message: err.message
+    }).code(200);
+  }
+};
 module.exports = {
     precheckAndCreateOrder,
     confirmAppointment,
@@ -381,6 +416,7 @@ module.exports = {
     getDoctorAppointments,
     doctoreject,
     DoctorApproval,
+    getRtcToken
 }
 
 

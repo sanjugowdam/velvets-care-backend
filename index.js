@@ -59,7 +59,7 @@ const init = async () => {
 
     // Register routes
     const routesPlugin = {
-        name: 'Green Sense AI Routes',
+        name: 'Velvets Care Routes',
         version: '1.0.0',
 
         register: (server, options) => {
@@ -121,7 +121,7 @@ const init = async () => {
     // Start the server
     await server.start();
     console.clear()
-    console.log('Green Sense AI Server running on \x1b[34m%s\x1b[0m', server.info.uri);
+    console.log('Velvets Care API running on \x1b[34m%s\x1b[0m', server.info.uri);
     console.log('Swagger documentation is available at: \x1b[34m%s/documentation\x1b[0m', server.info.uri);
 };
 

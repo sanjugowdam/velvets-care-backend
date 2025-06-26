@@ -7,5 +7,6 @@ module.exports = {
     OTPFunctions: require('./otp'),
     TwilioFunctions: require('./twilio'),
     GoogleAuthFunctions: require('./google_auth'),
-    RazorpayFunctions: require('./razorpay')
+    RazorpayFunctions: require('./razorpay'),
+    AgoraFunctions: require('./agora')
 }

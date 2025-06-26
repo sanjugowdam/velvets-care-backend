@@ -18,5 +18,8 @@ module.exports = {
     MAIL_USER: process.env.MAIL_USER,
     MAIL_PASS: process.env.MAIL_PASS,
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
-    RAZORPAY_SECRET: process.env.RAZORPAY_SECRET
+    RAZORPAY_SECRET: process.env.RAZORPAY_SECRET,
+    AGORA_APP_ID: process.env.AGORA_APP_ID,
+    AGORA_APP_CERTIFICATE: process.env.AGORA_APP_CERTIFICATE
+    
 }; 

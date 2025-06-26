@@ -4,7 +4,7 @@ HOST=localhost
 DB_HOST=localhost
 DB_USERNAME=root
 DB_PASSWORD=
-DB_NAME=greensenseai
+DB_NAME=vevlets
 
 DB_HOST_TEST=localhost
 DB_USERNAME_TEST=root
@@ -15,5 +15,14 @@ MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USER=sanjum3236@gmail.com
 MAIL_PASS=kaei oatj vllg emlz
+
+# payment details
+
+RAZORPAY_KEY_ID=rzp_test_zekYmyZABkSGIV
+RAZORPAY_SECRET= jpROfwF2l5nNziTBgBvee6Fj
+
+# agora
+AGORA_APP_ID=a2fffac61d754d97998ed71e2ab0aa6d
+AGORA_APP_CERTIFICATE=40b1d965d2264d21a51d41864d3090d0
 
 JWT_SECRET_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
