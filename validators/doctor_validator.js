@@ -164,6 +164,13 @@ const fecthdoctors_admin = Joi.object({
 
 });
 
+fetchSingleDoctorValidator = Joi.object({
+  doctor_id: Joi.number().integer().required().messages({
+    'number.base': 'Doctor ID must be a number',
+    'any.required': 'Doctor ID is required',
+  }),
+});
+
 module.exports = {
     basicDetailsValidator,
     statusValidator,

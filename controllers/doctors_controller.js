@@ -418,13 +418,40 @@ const doctorlist = async (req, h) => {
     }
 }
 
+const fetch_single_doctor = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const { doctor_id } = req.params;
+        const doctor = await Doctors.findOne({
+            where: { id: doctor_id }
+        });
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+        return h.response({
+            success: true,
+            message: 'Doctor fetched successfully',
+            data: doctor
+        }).code(200);
+    } catch (err) {
+        console.error(err);
+        return h.response({
+            success: false,
+            message: err.message
+        }).code(200);
+    }
+}
 module.exports = {
     updateBasicDetails,
     updateAddress,
     updateAvailability,
     updateStatus,
     doctorlist_user,
-    doctorlist
+    doctorlist,
+    fetch_single_doctor
 
 }
 

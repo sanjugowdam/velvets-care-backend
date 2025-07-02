@@ -10,7 +10,8 @@ const {
         updateAvailability,
         updateStatus,
         doctorlist_user,
-        doctorlist
+        doctorlist,
+        fetch_single_doctor
 
     }
 } = require('../controllers');
@@ -20,7 +21,8 @@ const {
         statusValidator,
         availabilityValidator,
         addressValidator,
-        fecthdoctors_admin
+        fecthdoctors_admin,
+        fetchSingleDoctorValidator
     },
     HeaderValidator,
 } = require('../validators');
@@ -161,6 +163,27 @@ module.exports = [
             }
         },
         handler: doctorlist
+    }
+},
+
+{
+    method: 'GET',
+    path: '/user/doctor/{id}',
+    options: {
+        description: 'Get a single doctor',
+        tags,
+        pre: [
+            SessionValidator
+        ],
+        validate: {
+            headers: HeaderValidator,
+            params: fetchSingleDoctorValidator,
+            failAction: (request, h, err) => {
+                const errors = err.details.map(e => e.message);
+                throw Boom.badRequest(errors.join(', '));
+            }
+        },
+        handler: fetch_single_doctor
     }
 },
 ];
