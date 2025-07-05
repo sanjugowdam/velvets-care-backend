@@ -21,7 +21,9 @@ const precheckAndCreateOrder = async (req, res) => {
         if (!session_user) throw new Error('Session expired');
 
         const { doctor_id, appointment_date, appointment_time } = req.payload;
-
+        console.log(doctor_id, appointment_date, appointment_time);
+        console.log(new Date(appointment_date));
+        console.log(new Date(appointment_date).toLocaleDateString());
         const user = await Users.findOne({ where: { id: session_user.user_id } });
         const doctor = await Doctors.findOne({
             where:
@@ -73,6 +75,7 @@ const precheckAndCreateOrder = async (req, res) => {
             data: order
         });
     } catch (error) {
+        console.log(error);
         return res.response({ success: false, message: error.message }).code(200);
     }
 };
