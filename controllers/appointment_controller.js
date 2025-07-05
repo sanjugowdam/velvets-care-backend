@@ -33,20 +33,26 @@ const precheckAndCreateOrder = async (req, res) => {
         if (!user || !doctor) throw new Error('Invalid user or doctor');
 
         const appointmentDate = new Date(appointment_date);
-        const appointmentDay = appointmentDate.toLocaleDateString('en-US', { weekday: 'long' });
-        const appointmentTime = appointment_time.slice(0, 5);
-
+        const appointmentDay = appointmentDate.toLocaleDateString('en-IN', { weekday: 'long' });
+        const AMPM = appointment_time.includes('AM') ? 'AM' : 'PM';
+        const time = appointment_time.split(' ')[0];
         const availability = await Doctorsavailability.findOne({
             where: {
                 doctor_id,
                 day: appointmentDay,
-                start_time: { [Op.lte]: appointmentTime },
-                end_time: { [Op.gte]: appointmentTime }
+                
             }
         });
-
-        if (!availability) throw new Error('Doctor is not available at this time');
-
+        if (!availability) throw new Error('Doctor is not available at this Date');
+        const savedTime = {
+            start_time: parseInt(availability.start_time.replace(':', '')),
+            end_time: parseInt(availability.end_time.replace(':', '')),
+            start_AMPM: availability.start_time.includes('AM') ? 'AM' : 'PM',
+            end_AMPM: availability.end_time.includes('AM') ? 'AM' : 'PM'
+        }
+        if (AMPM == savedTime.start_AMPM && parseInt(time.replace(':', '')) < savedTime.start_time || AMPM == savedTime.end_AMPM && parseInt(time.replace(':', '')) > savedTime.end_time) {
+            throw new Error('Doctor is not available at this Time');
+        }
         const existingAppointment = await Appointments.findOne({
             where: {
                 doctor_id,
