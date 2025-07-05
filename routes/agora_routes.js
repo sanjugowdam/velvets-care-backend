@@ -25,6 +25,9 @@ module.exports = [
         options: {
             description: 'Get RTC Token for doctor/patient',
             tags,
+            pre: [
+                SessionValidator
+            ],
             validate: {
                 headers: HeaderValidator,
                 params: appointment,
