@@ -414,6 +414,37 @@ const getRtcToken = async (req, h) => {
     }).code(200);
   }
 };
+
+const getUserAppointments = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
+        const user_count = await Appointments.count({
+            where: {
+                patient_id: session_user.user_id
+            }
+        });
+        const appointments = await Appointments.findAll({
+            where: {
+                patient_id: session_user.user_id
+            },
+            order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
+        });
+        return res.response({
+            success: true,
+            message: 'Appointments fetched successfully',
+            data: appointments,
+            total: user_count,
+        }).code(200);
+    } catch (error) {
+        console.error(error);
+        return res.response({
+            success: false,
+            message: error.message
+        }).code(200);
+    }
+}
+
 module.exports = {
     precheckAndCreateOrder,
     confirmAppointment,
@@ -422,7 +453,8 @@ module.exports = {
     getDoctorAppointments,
     doctoreject,
     DoctorApproval,
-    getRtcToken
+    getRtcToken,
+    getUserAppointments
 }
 
 

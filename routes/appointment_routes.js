@@ -10,6 +10,7 @@ const {
     getDoctorAppointments,
     doctoreject,
     DoctorApproval,
+    getUserAppointments
     }
 } = require('../controllers');
 const {
@@ -195,5 +196,25 @@ module.exports = [
             const order = await createRazorpayOrder(amount);
             return h.response(order).code(200);
         }
+    },
+    {
+        method: 'GET',
+        path: '/user/appointments',
+        options: {
+            description: 'Get all appointments',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                                    const errors = err.details.map(e => e.message);
+                                    throw Boom.badRequest(errors.join(', '));
+                                }
+            },
+        },
+        handler: getUserAppointments,
+
     }
 ]

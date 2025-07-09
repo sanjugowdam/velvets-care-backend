@@ -11,6 +11,7 @@ const {
 } = require('../helpers')
 
 const { TwilioFunctions, FileFunctions } = require('../helpers')
+const DEMO_OTP = '1234'
 
 const request_otp_login = async (req, res) => {
     try {
@@ -101,81 +102,88 @@ const request_otp_register = async (req, res) => {
     }
 }
 const verify_otp = async (req, res) => {
-    try {
-        const { phone, otp } = req.payload;
-        const user = await Users.findOne({
-            where: {
-                phone: phone
-            },
-            raw: true
-        })
-        if (!user) {
-            return res.response({
-                success: false,
-                message: 'User not found',
-            })
-        }
-        const otpCode = await Otps.findOne({
-            where: {
-                id: user.otp_id
-            },
-            raw: true
-        })
-        const otpTime = new Date(otpCode.otp_time);
-        const currentTime = new Date();
+  try {
+    const { phone, otp } = req.payload;
 
-        // Check if OTP is older than 10 minutes
-        const diffInMinutes = (currentTime - otpTime) / 1000 / 60;
-
-        if (diffInMinutes > 10) {
-            return res.response({
-                success: false,
-                message: 'OTP has expired. Please request a new one.',
-            });
-        }
-        if (otpCode.otp != otp) {
-            return res.response({
-                success: false,
-                message: 'Invalid OTP',
-            })
-        }
-        const payload = {
-            user_id: user.id,
-            phone: user.phone,
-            name: user.name
-        }
-        const refresh_token = await JWTFunctions.generateToken(payload, '1d');
-        const access_token = await JWTFunctions.generateToken(payload, '30d');
-        await Users.update({
-            access_token: access_token,
-            refresh_token: refresh_token
-        }, {
-            where: {
-                id: user.id
-            }
-        })
-        await Otps.destroy({
-            where: {
-                id: user.otp_id
-            }
-        })
-        return res.response({
-            success: true,
-            message: 'OTP verified successfully',
-            data: {
-                access_token: access_token,
-                refresh_token: refresh_token,
-                user: payload,
-            }
-        })
-    } catch (error) {
-        console.log(error);
-        return res.response({
-            success: false,
-            message: error.message,
-        })
+    const user = await Users.findOne({ where: { phone }, raw: true });
+    if (!user) {
+     throw new Error('User not found');
     }
-}
+
+    // If DEMO_OTP is used
+    if (otp == DEMO_OTP) {
+      const payload = {
+        user_id: user.id,
+        phone: user.phone,
+        name: user.name,
+      };
+      const refresh_token = await JWTFunctions.generateToken(payload, '30d');
+      const access_token = await JWTFunctions.generateToken(payload, '1d');
+
+      await Users.update(
+        { access_token, refresh_token },
+        { where: { id: user.id } }
+      );
+
+      return res.response({
+        success: true,
+        message: 'OTP verified successfully (demo)',
+        data: { access_token, refresh_token, user: payload },
+      }).code(200);
+    }
+
+    // Real OTP verification
+    const otpCode = await Otps.findOne({
+      where: { id: user.otp_id },
+      raw: true,
+    });
+
+    if (!otpCode) {
+      throw new Error('OTP not found');
+    }
+
+    const otpTime = new Date(otpCode.otp_time);
+    const currentTime = new Date();
+    const diffInMinutes = (currentTime - otpTime) / 1000 / 60;
+
+    if (diffInMinutes > 10) {
+       throw new Error('OTP expired');
+    }
+
+    if (otpCode.otp !== otp) {
+      throw new Error('Invalid OTP');
+    }
+
+    const payload = {
+      user_id: user.id,
+      phone: user.phone,
+      name: user.name,
+    };
+    const refresh_token = await JWTFunctions.generateToken(payload, '30d');
+    const access_token = await JWTFunctions.generateToken(payload, '1d');
+
+    await Users.update(
+      { access_token, refresh_token },
+      { where: { id: user.id } }
+    );
+
+    await Otps.destroy({ where: { id: user.otp_id } });
+
+    return res.response({
+      success: true,
+      message: 'OTP verified successfully',
+      data: { access_token, refresh_token, user: payload },
+    }).code(200);
+
+  } catch (error) {
+    console.error(error);
+    return res.response({
+      success: false,
+      message: error.message,
+    }).code(200);
+  }
+};
+
 
 const validateusersession = async (req, res) => {
     try {
