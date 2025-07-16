@@ -12,6 +12,7 @@ module.exports = {
     Clinicdoctors: 'clinicdoctors',
     Appointments: 'appointments',
     Reviews: 'reviews',
+    DoctorSpecializations: 'doctor_specializations',
     Notifications: 'notifications',
     SustainabilityScore: 'sustainability_score',
     UserClicksOnStores: 'user_clicks_on_stores',

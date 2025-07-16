@@ -19,7 +19,7 @@ MAIL_PASS=kaei oatj vllg emlz
 # payment details
 
 RAZORPAY_KEY_ID=rzp_test_zekYmyZABkSGIV
-RAZORPAY_SECRET= jpROfwF2l5nNziTBgBvee6Fj
+RAZORPAY_SECRET=jpROfwF2l5nNziTBgBvee6Fj
 
 # agora
 AGORA_APP_ID=a2fffac61d754d97998ed71e2ab0aa6d

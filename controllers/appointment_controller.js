@@ -143,8 +143,8 @@ const confirmAppointment = async (req, res) => {
 const getDoctorAppointments = async (req, res) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user || !session_user.user_id) {
-            throw new Error('Session expired or invalid user');
+        if (!session_user) {
+            throw new Error('Session expired');
         }
 
         const doctor_id = session_user.user_id;
@@ -169,9 +169,12 @@ const getDoctorAppointments = async (req, res) => {
 
         const appointments = await Appointments.findAll({
             where: filters,
+            include: [{
+                model: Users,
+                as: 'patient'
+            }],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
         });
-
         return res.response({
             success: true,
             message: 'Appointments fetched successfully',
@@ -185,7 +188,6 @@ const getDoctorAppointments = async (req, res) => {
         }).code(200);
     }
 };
-
 
 const DoctorApproval = async (req, h) => {
     try {
@@ -428,6 +430,10 @@ const getUserAppointments = async (req, res) => {
             where: {
                 patient_id: session_user.user_id
             },
+            include: [{
+                model: Doctors,
+                as: 'doctors',
+            }],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
         });
         return res.response({
@@ -445,6 +451,73 @@ const getUserAppointments = async (req, res) => {
     }
 }
 
+const checkDoctorAvailability = async (req, res) => {
+  try {
+    // 1️⃣  Auth / session
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
+
+    // 2️⃣  Validate payload
+    const { doctor_id, appointment_date, appointment_time } = req.payload;
+    if (!doctor_id || !appointment_date || !appointment_time) {
+      throw new Error('doctor_id, appointment_date and appointment_time are required');
+    }
+    if (new Date(appointment_date) < new Date()) {
+      throw new Error('Booking for past date is not allowed');
+    }
+
+    // 3️⃣  Look‑ups
+    const user   = await Users.findByPk(session_user.user_id);
+    const doctor = await Doctors.findByPk(doctor_id, { raw: true });
+    if (!user || !doctor) throw new Error('Invalid user or doctor');
+
+    // 4️⃣  Day / time translation
+    const appointmentDate = new Date(appointment_date);
+    const appointmentDay  = appointmentDate.toLocaleDateString('en-IN', { weekday: 'long' });
+    const ampm            = appointment_time.includes('AM') ? 'AM' : 'PM';
+    const plainTime       = appointment_time.split(' ')[0];          // "10:30"
+
+    // 5️⃣  Doctor’s weekly availability
+    const availability = await Doctorsavailability.findOne({
+      where: { doctor_id, day: appointmentDay }
+    });
+    if (!availability) throw new Error('Doctor is not available on this day');
+
+    const saved = {
+      start:      parseInt(availability.start_time.replace(':','')),   // 930
+      end:        parseInt(availability.end_time.replace(':','')),     // 1230
+      startAMPM:  availability.start_time.includes('AM') ? 'AM' : 'PM',
+      endAMPM:    availability.end_time.includes('AM')   ? 'AM' : 'PM'
+    };
+
+    const requested = parseInt(plainTime.replace(':',''));            // 1030
+    const outsideWindow =
+      (ampm === saved.startAMPM && requested < saved.start) ||
+      (ampm === saved.endAMPM   && requested > saved.end);
+
+    if (outsideWindow) throw new Error('Doctor is not available at this time');
+
+    // 6️⃣  Collision check
+    const existing = await Appointments.findOne({
+      where: { doctor_id, appointment_date, appointment_time }
+    });
+    if (existing) throw new Error('Slot already booked');
+
+    // ✅  All good – return success
+    return res.response({
+      success : true,
+      message : 'Doctor is available for this slot'
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.response({
+      success : false,
+      message : err.message
+    }).code(200);
+  }
+};
+
 module.exports = {
     precheckAndCreateOrder,
     confirmAppointment,
@@ -454,7 +527,8 @@ module.exports = {
     doctoreject,
     DoctorApproval,
     getRtcToken,
-    getUserAppointments
+    getUserAppointments,
+    checkDoctorAvailability
 }
 
 

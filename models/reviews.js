@@ -14,7 +14,7 @@ const Users  =require ('../models/users')
 const doctors  =require ('../models/doctors')
   class REVIEWS extends Model {
   }
-  Reviews.init({
+  REVIEWS.init({
     doctor_id: DataTypes.INTEGER,
     user_id: DataTypes.INTEGER,
     rating: DataTypes.FLOAT,

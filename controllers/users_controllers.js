@@ -444,6 +444,38 @@ const googleSignIn = async (request, h) => {
     }
   };
   
+  const getuserData = async (request, h) => {
+    try {
+        const session_user = request.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const user = await Users.findOne({
+            where: { id: session_user.user_id },
+            attributes: ['id', 'name', 'phone', 'email', 'dob', 'profile_image_id'],
+            include: [{
+                model: Files,
+                as: 'profile_image',
+                attributes: ['file_url', 'original_name']
+            }],
+            raw: true
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return h.response({
+            success: true,
+            message: 'User data fetched successfully',
+            data: user
+        }).code(200);
+    } catch (error) {
+        console.error(error);
+        return h.response({
+            success: false,
+            message: error.message
+        }).code(500);
+    }
+  };
 
 module.exports = {
     request_otp_login, 
@@ -455,6 +487,7 @@ module.exports = {
     user_refresh_token,
     getusers,
  googleSignIn ,
+    getuserData
 
 
     

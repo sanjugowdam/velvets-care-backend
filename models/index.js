@@ -11,6 +11,8 @@ module.exports = {
   Clinics: require('./clinics'),
   Clinicdoctors: require('./clinicdoctors'),
   Appointments: require('./appointment'),
+  Reviews: require('./reviews'),
+  Specialization: require('./specialization'),
   // Notifications: require('./notifications'),
   // SustainabilityScore: require('./sustainability_score'),
   // UserClicksOnStores: require('./user_clicks_on_stores'),

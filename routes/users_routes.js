@@ -13,6 +13,7 @@ const {
         update_user,
         user_refresh_token,
         getusers,
+        getuserData
         
     }
 } = require('../controllers');
@@ -188,5 +189,25 @@ module.exports = [
             },
         },
         handler: getusers,
+    }
+    ,
+    {
+        method: 'GET',
+        path: '/user/profile',
+        options: {
+            description: 'Get user profile',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: getuserData,
     }
 ];

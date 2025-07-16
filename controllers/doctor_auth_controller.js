@@ -1,8 +1,9 @@
 
-const { Doctors, Otps } = require('../models');
+const { Doctors, Otps, Users, Files, Doctorsavailability, Adresses,Specialization } = require('../models');
 const {
     OTPFunctions, JWTFunctions, TwilioFunctions
 } = require('../helpers')
+
 const DEMO_OTP = '1234'
 const doctor_request_otp = async (req, res) => {
     try {
@@ -331,10 +332,61 @@ const doctor_refresh_token = async (req, res) => {
     }
 };
 
+const getDoctorProfile = async (req, res) => {
+    try {
+        const session_doctor = req.headers.doctor;
+        if (!session_doctor) {
+            throw new Error('Session expired');
+        }
+
+        const doctor = await Doctors.findOne({
+            where: { id: session_doctor.doctor_id },
+            attributes: ['id', 'full_name', 'phone', 'email', 'dob', 'profile_image_id'],
+            include: [{
+                model: Files,
+                as: 'profile_image',
+                attributes: ['file_url', 'original_name']
+            },
+            {
+                model: Doctorsavailability,
+                as: 'availability',
+                attributes: ['id', 'day', 'start_time', 'end_time']
+            },
+            {
+                model: Adresses,
+                as: 'address',
+                attributes: ['id', 'address_line1', 'address_line2', 'city', 'state', 'country', 'zip_code']
+            },
+            {
+                model: Specialization,
+                as: 'specializations',
+                attributes: ['id', 'name']
+            }
+        ],
+            raw: true
+        });
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+        return res.response({
+            success: true,
+            message: 'Doctor profile fetched successfully',
+            data: doctor
+        }).code(200);
+    } catch (error) {
+        console.error(error);
+        return res.response({
+            success: false,
+            message: error.message
+        }).code(500);
+    }
+};
+
 module.exports = {
     doctor_request_otp,
     doctor_verify_otp,
     doctor_validate_session,
+    getDoctorProfile,
     doctor_logout,
     doctor_update_profile,
     doctor_refresh_token,

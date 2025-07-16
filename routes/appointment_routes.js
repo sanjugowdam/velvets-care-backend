@@ -10,7 +10,8 @@ const {
     getDoctorAppointments,
     doctoreject,
     DoctorApproval,
-    getUserAppointments
+    getUserAppointments,
+    checkDoctorAvailability
     }
 } = require('../controllers');
 const {
@@ -52,6 +53,26 @@ module.exports = [
             },
         },
         handler: precheckAndCreateOrder,
+    },
+    {
+        method: 'POST',
+        path: '/appointment/doctor-availability/check',
+        options: {
+            description: 'dr availability check',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                payload: razorpayPaymentValidator,
+                failAction: (request, h, err) => {
+                                    const errors = err.details.map(e => e.message);
+                                    throw Boom.badRequest(errors.join(', '));
+                                }
+            },
+        },
+        handler: checkDoctorAvailability,
     },
     {
         method: 'POST',
