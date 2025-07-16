@@ -12,7 +12,7 @@ const {
         doctor_logout,
         doctor_update_profile,
         doctor_refresh_token,
-
+getDoctorProfile
     }
 
 } = require('../controllers');
@@ -155,6 +155,25 @@ module.exports = [
             },
         },
         handler: doctor_refresh_token,
+    },
+    {
+        method: 'GET',
+        path: '/doctor/profile',
+        options: {
+            description: 'Get doctor profile',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
+            },
+        },
+        handler: getDoctorProfile,  
     }
 
 ];

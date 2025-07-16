@@ -451,7 +451,8 @@ module.exports = {
     updateStatus,
     doctorlist_user,
     doctorlist,
-    fetch_single_doctor
+    fetch_single_doctor,
+    
 
 }
 

@@ -11,8 +11,8 @@ const {
         updateStatus,
         doctorlist_user,
         doctorlist,
-        fetch_single_doctor
-
+        fetch_single_doctor,
+        
     }
 } = require('../controllers');
 const {

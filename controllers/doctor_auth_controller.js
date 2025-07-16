@@ -390,4 +390,5 @@ module.exports = {
     doctor_logout,
     doctor_update_profile,
     doctor_refresh_token,
+    getDoctorProfile
 };
