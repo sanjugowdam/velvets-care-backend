@@ -11,7 +11,8 @@ const {
     doctoreject,
     DoctorApproval,
     getUserAppointments,
-    checkDoctorAvailability
+    checkDoctorAvailability,
+    getDoctorAvailableTimeSlots
     }
 } = require('../controllers');
 const {
@@ -22,6 +23,7 @@ const {
     fecthAppointmentsValidator,
     fetchdoctorAppointmentsValidator,
     appointment,
+    slotcheckingValidator
     },
     HeaderValidator,
 } = require('../validators');
@@ -237,5 +239,26 @@ module.exports = [
         },
         handler: getUserAppointments,
 
+    },
+    {
+        method: 'POST',
+        path: '/appointment/check-slot',
+        options: {
+            description: 'Check doctor availability',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                payload: slotcheckingValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: getDoctorAvailableTimeSlots,
     }
+
 ]

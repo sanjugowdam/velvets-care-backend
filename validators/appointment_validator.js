@@ -135,6 +135,17 @@ const appointment = Joi.object({
         'any.required': 'ID is required',
     }),
 })
+
+const slotcheckingValidator = Joi.object({
+    doctor_id: Joi.number().required().messages({
+        'number.empty': 'Doctor ID is required',
+        'any.required': 'Doctor ID is required',
+    }),
+    appointment_date: Joi.string().required().messages({
+        'string.empty': 'Date is required',
+        'any.required': 'Date is required',
+    }),
+});
 module.exports = {
     appointmentValidator,
     razorpayPaymentValidator,
@@ -143,6 +154,7 @@ module.exports = {
     fecthAppointmentsValidator,
     fetchdoctorAppointmentsValidator,
     appointment,
+    slotcheckingValidator,
 
     
 }

@@ -162,7 +162,7 @@ const doctor_verify_otp = async (req, res) => {
 
 const doctor_validate_session = async (req, res) => {
     try {
-        const session_doctor = req.headers.doctor;
+        const session_doctor = req.headers.user;
         if (!session_doctor) {
             throw new Error('Session expired');
         }
@@ -193,7 +193,7 @@ const doctor_validate_session = async (req, res) => {
 
 const doctor_logout = async (req, res) => {
     try {
-        const session_doctor = req.headers.doctor;
+        const session_doctor = req.headers.user;
         if (!session_doctor) {
             throw new Error('Session expired');
         }
@@ -234,7 +234,7 @@ const doctor_logout = async (req, res) => {
 
 const doctor_update_profile = async (req, res) => {
     try {
-        const session_doctor = req.headers.doctor;
+        const session_doctor = req.headers.user;
         if (!session_doctor) {
             throw new Error('Session expired');
         }
@@ -334,34 +334,30 @@ const doctor_refresh_token = async (req, res) => {
 
 const getDoctorProfile = async (req, res) => {
     try {
-        const session_doctor = req.headers.doctor;
+        const session_doctor = req.headers.user;
         if (!session_doctor) {
             throw new Error('Session expired');
         }
 
         const doctor = await Doctors.findOne({
             where: { id: session_doctor.doctor_id },
-            attributes: ['id', 'full_name', 'phone', 'email', 'dob', 'profile_image_id'],
+            attributes: ['id', 'full_name', 'phone', 'email', 'gender',  'profile_image_id'],
             include: [{
                 model: Files,
                 as: 'profile_image',
-                attributes: ['file_url', 'original_name']
+                attributes: ['files_url', 'original_name']
             },
             {
                 model: Doctorsavailability,
-                as: 'availability',
                 attributes: ['id', 'day', 'start_time', 'end_time']
             },
             {
                 model: Adresses,
-                as: 'address',
-                attributes: ['id', 'address_line1', 'address_line2', 'city', 'state', 'country', 'zip_code']
             },
-            {
-                model: Specialization,
-                as: 'specializations',
-                attributes: ['id', 'name']
-            }
+            // {
+            //     model: Specialization,
+            //     attributes: ['id', 'name']
+            // }
         ],
             raw: true
         });

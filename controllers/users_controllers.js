@@ -455,8 +455,7 @@ const googleSignIn = async (request, h) => {
             attributes: ['id', 'name', 'phone', 'email', 'dob', 'profile_image_id'],
             include: [{
                 model: Files,
-                as: 'profile_image',
-                attributes: ['file_url', 'original_name']
+                attributes: ['files_url', 'original_name']
             }],
             raw: true
         });
