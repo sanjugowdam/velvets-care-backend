@@ -1,6 +1,4 @@
-const {
-    Specialization
-} = require('../models')
+
 const {
     Op,
     where
