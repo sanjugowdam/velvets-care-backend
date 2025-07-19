@@ -539,14 +539,27 @@ const getDoctorAvailableTimeSlots = async (req, res) => {
     if (!user || !doctor) throw new Error('Invalid user or doctor');
 
     // 4️⃣ Day translation
-    const appointmentDate = new Date(appointment_date);
-    const appointmentDay  = appointmentDate.toLocaleDateString('en-IN', { weekday: 'long' });
+
+        const appointmentDate = new Date(appointment_date);
+        const appointmentDay = appointmentDate.toLocaleDateString('en-IN', { weekday: 'long' });
 
     // 5️⃣ Doctor’s weekly availability
     const availability = await Doctorsavailability.findOne({
-      where: { doctor_id, day: appointmentDay }
+      where: 
+      {
+     doctor_id,
+     day: appointmentDay 
+    }
     });
+    
     if (!availability) throw new Error('Doctor is not available on this day');
+
+    const availableSlots = await Doctorsavailability.findAll({
+      where: {
+        doctor_id,
+      },
+      attributes: ['start_time', 'end_time', 'day'],
+    });
 
     const saved = {
       start:      parseInt(availability.start_time.replace(':','')),   // 930
@@ -562,7 +575,8 @@ const getDoctorAvailableTimeSlots = async (req, res) => {
         day: appointmentDay,
         start_time: availability.start_time,
         end_time: availability.end_time
-      }
+      },
+      slot: availableSlots
     });
 
   } catch (err) {

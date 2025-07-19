@@ -7,5 +7,6 @@ module.exports = {
     DoctorController : require('./doctors_controller'),
     DoctorAuthController : require('./doctor_auth_controller'),
     ClinicController : require('./clinic_controller'),
-    AppointmentController : require('./appointment_controller')
+    AppointmentController : require('./appointment_controller'),
+    SpecializationController : require('./specilization_controller'),
 }

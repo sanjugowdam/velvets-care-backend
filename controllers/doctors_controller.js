@@ -46,8 +46,8 @@ const updateBasicDetails = async (req, h) => {
         // File Uploads
         let regCertFileId = null;
         let degreeCertFileId = null;
-        let profileFileId = null;
         let govFileId = null;
+        let profileFileId = null;
         let panFileId = null;
 
         if (profile_image) {
@@ -452,8 +452,6 @@ module.exports = {
     doctorlist_user,
     doctorlist,
     fetch_single_doctor,
-    
-
 }
 
 

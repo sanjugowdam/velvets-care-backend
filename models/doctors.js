@@ -11,6 +11,7 @@ const {
 } = require('sequelize');
 const OTPS = require('./otp')
 const Files = require('./files')
+const Specialization = require('./specialization');
   class DoctorModel extends Model {
   }
   DoctorModel.init({
@@ -20,7 +21,9 @@ const Files = require('./files')
     phone: DataTypes.BIGINT,
     email: DataTypes.STRING,
     specialization: DataTypes.STRING,
+    specialization_id: DataTypes.INTEGER,
     years_of_experience: DataTypes.INTEGER,
+    description: DataTypes.STRING,
     registration_number: DataTypes.STRING,
     registration_certificate_id: DataTypes.INTEGER,
     medical_degree_certificate_id: DataTypes.INTEGER,
@@ -56,6 +59,9 @@ const Files = require('./files')
   
   DoctorModel.belongsTo(Files, { foreignKey: 'pan_card_id', as: 'pan_card_file' });
   Files.hasMany(DoctorModel, { foreignKey: 'pan_card_id', as: 'pan_card_file' });
+
+  DoctorModel.belongsTo(Specialization, { foreignKey: 'specialization_id'});
+  Specialization.hasMany(DoctorModel, { foreignKey: 'specialization_id' });
   
  
   
