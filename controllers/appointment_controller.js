@@ -3,7 +3,8 @@ const {
     Appointments,
     Users,
     Doctors,
-    Doctorsavailability
+    Doctorsavailability,
+    Specialization
 
 } = require('../models')
 const {
@@ -324,6 +325,9 @@ const getadminAppointments = async (req, res) => {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
         const { page, limit, searchquery, doctor_id, status, date, patient_id } = req.query;
+        if(!page || !limit) {
+            throw new Error('Page and limit are required');
+        }
         let filter = {};
         if (doctor_id) {
             filter = {
@@ -365,6 +369,23 @@ const getadminAppointments = async (req, res) => {
             limit: limit,
             offset: (page - 1) * limit,
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
+            include: [{
+                model: Users,
+                attributes: ['id', 'name', 'email', 'phone']
+            }, {
+                model: Doctors,
+                attributes: {
+                    exclude: ['access_token', 'otp_id', 'refresh_token']
+                },
+                include: [{
+                    model: Files,
+                    as: 'profile_image',
+                },
+                {
+                    model: Specialization,
+                }]
+
+            }]
         });
         return res.response({
             success: true,

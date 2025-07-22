@@ -37,7 +37,7 @@ const getadminspecialization = Joi.object({
         'string.empty': 'Page is required',
         'any.required': 'Page is required',
     }),
-    limit: Joi.number().integer().allow(null).messages({
+    limit: Joi.number().integer().required().messages({
         'string.empty': 'Limit is required',
         'any.required': 'Limit is required',
     }),

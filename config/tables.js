@@ -1,4 +1,5 @@
 
+
 module.exports = {
     Otps: 'otps',
     Users: 'users',
@@ -13,9 +14,8 @@ module.exports = {
     Appointments: 'appointments',
     Reviews: 'reviews',
     DoctorSpecializations: 'doctor_specializations',
-    Notifications: 'notifications',
-    SustainabilityScore: 'sustainability_score',
-    UserClicksOnStores: 'user_clicks_on_stores',
-    UserSearchHistory: 'user_search_history',
-    UserSearchPreference: 'user_search_preference'
+    Products: 'products',
+    Carts: 'carts',
+    Wishlists: 'wishlists',
+    
 }
