@@ -1,3 +1,4 @@
+const Product = require('./product');
 
 module.exports = {
   Users: require('./users'),
@@ -13,6 +14,17 @@ module.exports = {
   Appointments: require('./appointment'),
   Reviews: require('./reviews'),
   Specialization: require('./specialization'),
+  Products: require('./product'),
+  Carts: require('./cart'),
+  Wishlists: require('./wishlist'),
+  Brands: require('./brand'),
+  Categories: require('./category'),
+  Discounts: require('./discount'),
+  DiscountedUsers: require('./discounteduser'),
+  DiscountedProducts: require('./discountedproduct'),
+  Subcategories: require('./subcategory'),
+  ProductImages: require('./productimage'),
+
   // Notifications: require('./notifications'),
   // SustainabilityScore: require('./sustainability_score'),
   // UserClicksOnStores: require('./user_clicks_on_stores'),

@@ -652,6 +652,35 @@ const getDoctorAvailableTimeSlots = async (req, res) => {
   }
 };
 
+const getTodaysAppointmentsDoctor = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
+
+        const doctor = await Doctors.findOne({ where: { id: session_user.doctor_id }, raw: true });
+        if (!doctor) throw new Error('Invalid doctor');
+        
+        const appointments = await Appointments.findAll({
+            where: {
+                doctor_id: doctor.id,
+                appointment_date: new Date().toISOString().split('T')[0]
+            },
+            raw: true
+        });
+        return res.response({
+            success: true,
+            message: 'Appointments fetched successfully',
+            data: appointments
+        }).code(200);
+
+    } catch (err) {
+        console.error(err);
+        return res.response({
+            success: false,
+            message: err.message
+        }).code(200);
+    }
+};
 
 module.exports = {
     precheckAndCreateOrder,
@@ -665,6 +694,7 @@ module.exports = {
     getUserAppointments,
     checkDoctorAvailability,
     getDoctorAvailableTimeSlots,
+    getTodaysAppointmentsDoctor,
 }
 
 

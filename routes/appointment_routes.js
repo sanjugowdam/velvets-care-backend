@@ -12,7 +12,8 @@ const {
     DoctorApproval,
     getUserAppointments,
     checkDoctorAvailability,
-    getDoctorAvailableTimeSlots
+    getDoctorAvailableTimeSlots,
+    getTodaysAppointmentsDoctor,
     }
 } = require('../controllers');
 const {
@@ -238,7 +239,6 @@ module.exports = [
             },
         },
         handler: getUserAppointments,
-
     },
     {
         method: 'POST',
@@ -259,6 +259,25 @@ module.exports = [
             },
         },
         handler: getDoctorAvailableTimeSlots,
+    },
+    {
+        method: 'GET',
+        path: '/doctor/today/appointments',
+        options: {
+            description: 'Get todays first appointment',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                                    const errors = err.details.map(e => e.message);
+                                    throw Boom.badRequest(errors.join(', '));
+                                }
+            },
+        },
+        handler: getTodaysAppointmentsDoctor,
     }
 
 ]

@@ -1,5 +1,4 @@
 
-
 module.exports = {
     Otps: 'otps',
     Users: 'users',
@@ -17,5 +16,12 @@ module.exports = {
     Products: 'products',
     Carts: 'carts',
     Wishlists: 'wishlists',
-    
+    Brands: 'brands',
+    Categories: 'categories',
+    Discounts: 'discounts',
+    DiscountedUsers: 'discountedusers',
+    DiscountedProducts: 'discountedproducts',
+    Subcategories: 'subcategories',
+    ProductImages: 'product_images',
+
 }

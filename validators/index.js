@@ -17,6 +17,8 @@ module.exports = {
     ClinicValidator: require('./clinic_validator'),
     AppointmentValidator: require('./appointment_validator'),
     SpecializationValidator: require('./specilization_validator'),
+    ProductValidator: require('./product_validator'),
+    // CategoryValidator: require('./category_validator'),
 
 
 }

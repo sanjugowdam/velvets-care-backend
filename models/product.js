@@ -11,6 +11,10 @@ const {
   DataTypes
 } = require('sequelize');
 
+const Brands = require('./brand');
+const Categories = require('./category');
+const ProductImages = require('./productimage');
+
   class Product extends Model {
   }
   Product.init({
@@ -31,6 +35,18 @@ const {
     paranoid: true,
     modelName: Products,
   });
+
+  Product.belongsTo(Categories, { foreignKey: 'category_id' });
+  Categories.hasMany(Product, { foreignKey: 'category_id' });
+
+  Product.belongsTo(Brands, { foreignKey: 'brand_id' });
+  Brands.hasMany(Product, { foreignKey: 'brand_id' });
+
+  Product.hasMany(ProductImages, { foreignKey: 'product_id' });
+  ProductImages.belongsTo(Product, { foreignKey: 'product_id' });
+
+  // Product.hasMany(Reviews, { foreignKey: 'product_id' });
+  // Reviews.belongsTo(Product, { foreignKey: 'product_id' });
   
 module.exports = Product;
 
