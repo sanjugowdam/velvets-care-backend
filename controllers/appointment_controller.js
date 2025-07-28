@@ -659,13 +659,18 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
         const doctor = await Doctors.findOne({ where: { id: session_user.doctor_id }, raw: true });
         if (!doctor) throw new Error('Invalid doctor');
 
+        // Format today’s date as "MM-DD-YYYY"
+        const today = new Date();
+        const formattedToday = `${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}-${today.getFullYear()}`;
+
         const appointments = await Appointments.findAll({
             where: {
                 doctor_id: doctor.id,
-                appointment_date: new Date().toISOString().split('T')[0]
+                appointment_date: formattedToday
             },
             raw: true
         });
+
         return res.response({
             success: true,
             message: 'Appointments fetched successfully',
