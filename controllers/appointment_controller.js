@@ -20,7 +20,6 @@ const precheckAndCreateOrder = async (req, res) => {
     try {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
-
         const { doctor_id, appointment_date, appointment_time } = req.payload;
         if(new Date(appointment_date) < new Date()) throw new Error('Booking for past date is not allowed');
         const user = await Users.findOne({ where: { id: session_user.user_id } });

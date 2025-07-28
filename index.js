@@ -117,6 +117,25 @@ const init = async () => {
             console.error("Unable to connect to the MySQL:", error);
         }
     })(seq);
+
+    // logs the url being hit
+    server.ext('onPreHandler', async (request, h) => {
+        const { method, path, payload, query, params, headers, url } = request;
+    
+        const fullUrl = `${request.server.info.protocol || 'http'}://${request.info.host}${request.url.pathname}${request.url.search || ''}`;
+        const token = headers['authorization'] || 'N/A';
+    
+        console.log('--- Incoming Request ---');
+        console.log('URL      :', fullUrl);
+        console.log('Method   :', method.toUpperCase());
+        console.log('Params   :', Object.keys(params).length ? params : 'N/A');
+        console.log('Query    :', Object.keys(query).length ? query : 'N/A');
+        console.log('Payload  :', payload || 'N/A');
+        console.log('Token    :', token);
+        console.log('------------------------');
+    
+        return h.continue;
+    });
     
     // Start the server
     await server.start();
