@@ -110,7 +110,7 @@ const confirmAppointment = async (req, res) => {
             appointment_date,
             appointment_time,
             reason,
-            status: 'approved',
+            status: 'pending',
             payment_id,
             order_id,
             payment_signature,
@@ -659,7 +659,7 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
 
         const doctor = await Doctors.findOne({ where: { id: session_user.doctor_id }, raw: true });
         if (!doctor) throw new Error('Invalid doctor');
-        
+
         const appointments = await Appointments.findAll({
             where: {
                 doctor_id: doctor.id,
