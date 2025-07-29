@@ -668,7 +668,12 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
                 doctor_id: doctor.id,
                 appointment_date: formattedToday
             },
-            raw: true
+            include: [
+                {
+                    model: Users,
+                }
+            ],
+          
         });
 
         return res.response({
