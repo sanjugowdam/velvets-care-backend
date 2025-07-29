@@ -677,7 +677,6 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
             include: [
                 {
                     model: Files,
-                    attributes: ['file_url', 'original_name', 'extension', 'size']
                 }
             ]
         }
