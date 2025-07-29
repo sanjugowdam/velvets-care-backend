@@ -339,11 +339,13 @@ const doctorlist = async (req, h) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
+
         const { specialization, years_of_experience, searchquery, page, limit } = req.query;
         let offset;
-        if(page && limit){
-           offset = (page - 1) * limit
+        if (page && limit) {
+            offset = (page - 1) * limit;
         }
+
         let filter = {};
         if (searchquery) {
             filter = {
@@ -353,70 +355,64 @@ const doctorlist = async (req, h) => {
                 ],
             };
         }
+
         if (specialization) {
-            filter = {
-                ...filter,
-                specialization: specialization
-            }
+            filter = { ...filter, specialization };
         }
+
         if (years_of_experience) {
-            filter = {
-            ...filter,
-            years_of_experience : years_of_experience
-            }
+            filter = { ...filter, years_of_experience };
         }
-        const doctor_count = await Doctors.count({
-            where: filter
-        });
-        const doctors = await Doctors.findAll({
-            attributes: { exclude: ['access_token', 'refresh_token'] },
-            include: [
-                {
-                    model: Adresses
-                },
-                {
-                    model: Doctorsavailability
-                },
-                {
-                    model: Files,
-                    as:'registration_certificate'
-                },
-                {
-                    model: Files,
-                    as:'medical_degree_certificate'
-                },
-                {
-                    model: Files,
-                    as:'profile_image'
-                },
-                {
-                    model: Files,
-                    as:'government_id_file'
-                },
-                {
-                    model: Files,
-                    as:'pan_card_file'
-                }
-            ],
-            where: filter,
-            limit: limit,
-            ...offset ? { offset } : {},
-        });
+
+        if (page && limit) {
+            const doctor_count = await Doctors.count({ where: filter });
+
+            const doctors = await Doctors.findAll({
+                attributes: { exclude: ['access_token', 'refresh_token'] },
+                include: [
+                    { model: Adresses },
+                    { model: Doctorsavailability },
+                    { model: Files, as: 'registration_certificate' },
+                    { model: Files, as: 'medical_degree_certificate' },
+                    { model: Files, as: 'profile_image' },
+                    { model: Files, as: 'government_id_file' },
+                    { model: Files, as: 'pan_card_file' },
+                ],
+                where: filter,
+                limit: parseInt(limit),
+                offset: offset,
+            });
+
             return h.response({
                 success: true,
                 message: 'Doctors fetched successfully',
                 data: doctors,
                 total: doctor_count,
             }).code(200);
+
+        } else {
+            // If no pagination, return minimal info
+            const basicDoctors = await Doctors.findAll({
+                attributes: ['id', 'full_name', 'phone', 'email'],
+                where: filter,
+            });
+
+            return h.response({
+                success: true,
+                message: 'Basic doctor list fetched successfully',
+                data: basicDoctors,
+            }).code(200);
         }
-     catch (err) {
+
+    } catch (err) {
         console.error(err);
         return h.response({
             success: false,
-            message: err.message
+            message: err.message,
         }).code(200);
     }
-}
+};
+
 
 const fetch_single_doctor = async (req, h) => {
     try {
