@@ -669,10 +669,19 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
                 appointment_date: formattedToday
             },
             include: [
+        {
+            model: Users,
+            attributes: {
+                exclude: ['access_token', 'refresh_token', 'otp_id']
+            },
+            include: [
                 {
-                    model: Users,
+                    model: Files,
+                    attributes: ['file_url', 'original_name', 'extension', 'size']
                 }
-            ],
+            ]
+        }
+    ]
           
         });
 
