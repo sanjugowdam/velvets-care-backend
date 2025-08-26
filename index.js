@@ -121,10 +121,10 @@ const init = async () => {
     // logs the url being hit
     server.ext('onPreHandler', async (request, h) => {
         const { method, path, payload, query, params, headers, url } = request;
-    
+
         const fullUrl = `${request.server.info.protocol || 'http'}://${request.info.host}${request.url.pathname}${request.url.search || ''}`;
         const token = headers['authorization'] || 'N/A';
-    
+
         console.log('--- Incoming Request ---');
         console.log('URL      :', fullUrl);
         console.log('Method   :', method.toUpperCase());
@@ -133,13 +133,13 @@ const init = async () => {
         console.log('Payload  :', payload || 'N/A');
         console.log('Token    :', token);
         console.log('------------------------');
-    
+
         return h.continue;
     });
-    
+
     // Start the server
     await server.start();
-    console.clear()
+    // console.clear()
     console.log('Velvets Care API running on \x1b[34m%s\x1b[0m', server.info.uri);
     console.log('Swagger documentation is available at: \x1b[34m%s/documentation\x1b[0m', server.info.uri);
 };
