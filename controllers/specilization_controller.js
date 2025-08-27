@@ -62,7 +62,11 @@ const getAllSpecializationsAdmin = async (req, res) => {
         }
 
         const specializationslist = await Specialization.findAll({
-            include: [{ model: Files }],
+            include: [{
+                 model: Files,
+                 as: 'icon',
+                 attributes: ['file_url']
+             }],
             where: filter,
             offset,
             limit: limitNum,

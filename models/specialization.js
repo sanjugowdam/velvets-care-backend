@@ -24,6 +24,6 @@ const Files = require('./files');
   });
 
   Specialization.belongsTo(Files, { foreignKey: 'icon_id', as: 'icon' });
-  Files.hasMany(Specialization, { foreignKey: 'icon_id', as: 'icons' });
+  Files.hasMany(Specialization, { foreignKey: 'icon_id', as: 'icon' });
 
   module.exports = Specialization;
