@@ -1,6 +1,8 @@
 const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
+const fs = require('fs');
+
 
 // Format size function
 const formatBytes = (bytes) => {
