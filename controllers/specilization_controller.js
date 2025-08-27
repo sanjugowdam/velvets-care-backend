@@ -20,19 +20,26 @@ const createSpecialization = async (req, res) => {
         if (!name) {
             throw new Error('Specialization name is required');
         }
-        const iconpath = 'uploads/specialization-icons/';
-    const iconFile = await FileFunctions.uploadFile(icon, 'icon', iconpath);
-         const iconStore = await Files.create({
+        // make file optional
+        let iconStore;
+        if (icon) {
+            const iconpath = 'uploads/specialization-icons/';
+            const iconFile = await FileFunctions.uploadFile(icon, 'icon', iconpath);
+             iconStore = await Files.create({
                 file_url: iconFile.file_url,
                 extension: iconFile.extension,
                 original_name: iconFile.original_name,
                 size: iconFile.size
             });
-        const specialization = await Specialization.create({ name, icon_id: iconStore.id });
+        }
+        const specialization = await Specialization.create({
+            name,
+            icon_id: iconStore.id
+        });
         return res.response({
             success: 'true',
             message: 'Specialization created successfully',
-            data:specialization
+            data: specialization
         });
     } catch (error) {
         console.error('Error creating specialization:', error);
