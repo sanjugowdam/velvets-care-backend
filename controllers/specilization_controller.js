@@ -39,7 +39,7 @@ const createSpecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error creating specialization: ${error.message}`
-        }).status(500);
+        });
     }
 }
 
@@ -49,42 +49,40 @@ const getAllSpecializationsAdmin = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
+
         const { page, limit, search } = req.query;
-         let offset;
-        if(page && limit){
-           offset = (page - 1) * limit
-        }
+
+        const pageNum = parseInt(page) || 1;
+        const limitNum = parseInt(limit) || 10;
+        const offset = (pageNum - 1) * limitNum;
+
         let filter = {};
         if (search) {
-            filter = {
-                ...filter,
-                name: {
-                    [Op.like]: `%${search}%`
-                }
-            };
+            filter.name = { [Op.like]: `%${search}%` };
         }
-        const specializations = await Specialization.findAll({
-            include: [{
-                model: Files,
-            }],
-            where: filter,
-            ...offset ? {offset} : {},
-            limit: limit,
 
+        const specializationslist = await Specialization.findAll({
+            include: [{ model: Files }],
+            where: filter,
+            offset,
+            limit: limitNum,
         });
+
         return res.response({
-            success: 'true',
+            success: true,
             message: 'Specializations fetched successfully',
-            data: specializations
+            data: specializationslist
         });
+
     } catch (error) {
         console.error('Error fetching specializations:', error);
         return res.response({
-            success: 'false',
+            success: false,
             message: `Error fetching specializations: ${error.message}`
-        }).status(500);
+        });
     }
-}
+};
+
 
 const getdoctorsbasedonspecialization = async (req, res) => {
     try {
@@ -115,7 +113,7 @@ const getdoctorsbasedonspecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error fetching doctors: ${error.message}`
-        }).status(500);
+        });
     }
 }
 
@@ -143,7 +141,7 @@ const getspecilaizationsUsers = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error fetching specialization: ${error.message}`
-        }).status(500);
+        });
     }
 }
 
@@ -171,7 +169,7 @@ const deleteSpecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error deleting specialization: ${error.message}`
-        }).status(500);
+        });
     }
 }
 const updateSpecialization = async (req, res) => {
@@ -217,7 +215,7 @@ const updateSpecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error updating specialization: ${error.message}`
-        }).status(500);
+        });
     }
 }
 module.exports = {
