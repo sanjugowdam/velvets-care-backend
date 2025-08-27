@@ -34,7 +34,7 @@ const createSpecialization = async (req, res) => {
         }
         const specialization = await Specialization.create({
             name,
-            icon_id: iconStore.id
+            icon_id: iconStore?.id
         });
         return res.response({
             success: 'true',

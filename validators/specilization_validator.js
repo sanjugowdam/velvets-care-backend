@@ -7,7 +7,7 @@ const CreateSpecializationValidator = Joi.object({
     }),
     icon: Joi.any()
             .meta({ swaggerType: 'file' })
-            .description('Specialization image').messages({
+            .description('Specialization image').optional().messages({
               'any.required': 'Image is required',
             }),
 });
