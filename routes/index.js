@@ -9,4 +9,5 @@ module.exports = [
     ...require('./appointment_routes'),
     ...require('./agora_routes'),
     ...require('./specialization_routes'),
+    ...require('./product_routes'),
 ]

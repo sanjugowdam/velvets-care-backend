@@ -39,6 +39,55 @@ const createProductValidator = Joi.object({
     description: Joi.string().allow('', null),
 });
 
+const createimageValidator = Joi.object({
+    product_id: Joi.number().integer().required().messages({
+        'number.empty': 'Product ID is required',
+        'any.required': 'Product ID is required',
+    }),
+    file: Joi.any()
+                .meta({ swaggerType: 'file' })
+                .description('Product image').messages({
+                  'any.required': 'Image is required',
+                }),
+});
+
+const fetchAdminProductValidator = Joi.object({
+    page: Joi.number().integer().min(1).default(1).messages({
+        'number.base': 'Page must be a number',
+        'number.min': 'Page must be at least 1',
+    }),
+    limit: Joi.number().integer().min(1).max(100).default(10).messages({
+        'number.base': 'Limit must be a number',
+        'number.min': 'Limit must be at least 1',
+        'number.max': 'Limit must not exceed 100',
+    }),
+    search: Joi.string().allow('', null),
+    search: Joi.string().allow('', null),
+    sort: Joi.string().valid('name', 'mrp_price', 'selling_price', 'created_at', 'updated_at').default('created_at').messages({
+        'any.only': 'Sort must be one of name, mrp_price, selling_price, created_at, updated_at',
+    }),
+});
+
+const fetchProductsUsersValidator = Joi.object({
+    page: Joi.number().integer().min(1).default(1).messages({
+        'number.base': 'Page must be a number',
+        'number.min': 'Page must be at least 1',
+    }),
+    limit: Joi.number().integer().min(1).max(100).default(10).messages({
+        'number.base': 'Limit must be a number',
+        'number.min': 'Limit must be at least 1',
+        'number.max': 'Limit must not exceed 100',
+    }),
+    search: Joi.string().allow('', null),
+    sort: Joi.string().valid('name', 'mrp_price', 'selling_price', 'created_at', 'updated_at').default('created_at').messages({
+        'any.only': 'Sort must be one of name, mrp_price, selling_price, created_at, updated_at',
+    }),
+});
+
+
 module.exports = {
-    createProductValidator
+    createProductValidator,
+    createimageValidator,
+    fetchAdminProductValidator,
+    fetchProductsUsersValidator
 };

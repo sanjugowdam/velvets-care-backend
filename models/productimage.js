@@ -9,6 +9,8 @@ const {
   },
   sequelize
 } = require('../config');
+
+const Products = require('./product');
   class ProductImage extends Model {
   }
   ProductImage.init({
@@ -23,4 +25,6 @@ const {
     modelName: ProductImages,
   });
   
+  ProductImage.belongsTo(Products, { foreignKey: 'product_id' });
+  Products.hasMany(ProductImage, { foreignKey: 'product_id' });
 module.exports = ProductImage;

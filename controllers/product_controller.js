@@ -107,7 +107,89 @@ const GetProductById = async (req, res) => {
     }
 }    
 
+const uploadProductImage = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const {
+            product_id, file
+        } = req.payload
+        const product = await Products.findOne({ where: { id: product_id } });
+        if (!product) {
+            throw new Error('Product not found');
+        }
+        const image = await ProductImages.create({
+            product_id,
+            file_url: file.file_url,
+            extension: file.extension,
+            original_name: file.original_name,
+            size: file.size
+        });
+        return res.response({
+            success: true,
+            message: 'Product image uploaded successfully',
+            data: image
+        }).code(201);
+    } catch (error) {
+        console.error('Error uploading product image:', error);
+        return res.response({
+            success: false,
+            message: ' something went wrong while uploading product image'
+        }).code(200);
+    }
+};    
+
+const adminProducts = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const {
+            page = 1,
+            limit = 10,
+            search = '',
+        } = req.query;
+        const offset = (page - 1) * limit;
+        const where = {
+            is_active: true,
+        };
+        if (search) {
+            where.name = {
+                [Op.like]: `%${search}%`,
+            };
+            where.description = {
+                [Op.like]: `%${search}%`,
+            };
+            where.sku = {
+                [Op.like]: `%${search}%`,   
+            };
+        }
+        const products = await Products.findAll({
+            where,
+            limit,
+            offset,
+        });
+        return res.response({
+            success: true,
+            message: 'Products fetched successfully',
+            data: products,
+        }).code(200);
+    } catch (error) {
+            console.error('Error fetching products:', error);
+            return res.response({
+                success: false,
+            });
+    }
+};
+       
+
+
 module.exports = {
     CreateProduct,
-    GetProductById
+    GetProductById,
+    uploadProductImage,
+    
 }

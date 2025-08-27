@@ -9,4 +9,5 @@ module.exports = {
     ClinicController : require('./clinic_controller'),
     AppointmentController : require('./appointment_controller'),
     SpecializationController : require('./specilization_controller'),
+    ProductController : require('./product_controller'),
 }

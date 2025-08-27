@@ -13,7 +13,6 @@ const {
 
 const Brands = require('./brand');
 const Categories = require('./category');
-const ProductImages = require('./productimage');
 
   class Product extends Model {
   }
@@ -42,8 +41,7 @@ const ProductImages = require('./productimage');
   Product.belongsTo(Brands, { foreignKey: 'brand_id' });
   Brands.hasMany(Product, { foreignKey: 'brand_id' });
 
-  Product.hasMany(ProductImages, { foreignKey: 'product_id' });
-  ProductImages.belongsTo(Product, { foreignKey: 'product_id' });
+
 
   // Product.hasMany(Reviews, { foreignKey: 'product_id' });
   // Reviews.belongsTo(Product, { foreignKey: 'product_id' });
