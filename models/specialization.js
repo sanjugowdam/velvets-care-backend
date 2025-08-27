@@ -23,7 +23,7 @@ const Files = require('./files');
     modelName: DoctorSpecializations,
   });
 
-  Specialization.belongsTo(Files, { foreignKey: 'icon_id', as: 'icon' });
-  Files.hasMany(Specialization, { foreignKey: 'icon_id', as: 'icon' });
+  Specialization.belongsTo(Files, { foreignKey: 'icon_id' });
+  Files.hasMany(Specialization, { foreignKey: 'icon_id' });
 
   module.exports = Specialization;
