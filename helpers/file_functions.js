@@ -1,10 +1,8 @@
 const AWS = require('aws-sdk');
-const path = require('path');
-const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
-// Format size function remains unchanged
+// Format size function
 const formatBytes = (bytes) => {
     const units = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     let unitIndex = 0;
@@ -24,18 +22,32 @@ const s3 = new AWS.S3({
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 // Upload file to S3
-const uploadFile = async (req, file, store_path) => {
+const uploadFile = async (file, store_path = "") => {
     try {
-        const file_extension = file.filename.split('.').pop();
+        // Guard for optional file
+        if (!file) {
+            return null;
+        }
+
+        const originalName = file.hapi?.filename || file.filename;
+        if (!originalName) {
+            return null; // no filename, skip
+        }
+
+        const file_extension = originalName.split('.').pop();
         const uniqueFileName = `${store_path}${Date.now()}-${uuidv4()}.${file_extension}`;
 
-        const fileContent = await fs.promises.readFile(file.path);
+        // Get file buffer
+        const fileContent = file._data || (file.path ? await fs.promises.readFile(file.path) : null);
+        if (!fileContent) {
+            throw new Error("File content not found");
+        }
 
         const params = {
             Bucket: BUCKET_NAME,
             Key: uniqueFileName,
             Body: fileContent,
-            ContentType: file.headers['content-type']
+            ContentType: file.hapi?.headers['content-type'] || file.headers?.['content-type'] || 'application/octet-stream'
         };
 
         await s3.upload(params).promise();
@@ -45,8 +57,8 @@ const uploadFile = async (req, file, store_path) => {
         return {
             file_url,
             extension: file_extension,
-            original_name: file.filename,
-            size: formatBytes(file.bytes)
+            original_name: originalName,
+            size: formatBytes(Buffer.byteLength(fileContent))
         };
     } catch (error) {
         console.error('S3 Upload Error:', error);
@@ -57,11 +69,15 @@ const uploadFile = async (req, file, store_path) => {
 // Delete file from S3
 const deleteFile = async (file_path) => {
     try {
+        if (!file_path) {
+            return { success: false, message: 'No file path provided' };
+        }
+
         let key = file_path;
         if (file_path.startsWith('/')) key = file_path.slice(1);
         if (file_path.startsWith('http')) {
             const urlParts = new URL(file_path);
-            key = decodeURIComponent(urlParts.pathname).slice(1); // Remove leading '/'
+            key = decodeURIComponent(urlParts.pathname).slice(1);
         }
 
         const params = {
