@@ -39,7 +39,7 @@ const createSpecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error creating specialization: ${error.message}`
-        }).status(200);
+        }).status(500);
     }
 }
 
@@ -82,7 +82,7 @@ const getAllSpecializationsAdmin = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error fetching specializations: ${error.message}`
-        }).status(200);
+        }).status(500);
     }
 }
 
@@ -115,7 +115,7 @@ const getdoctorsbasedonspecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error fetching doctors: ${error.message}`
-        }).status(200);
+        }).status(500);
     }
 }
 
@@ -143,7 +143,7 @@ const getspecilaizationsUsers = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error fetching specialization: ${error.message}`
-        }).status(200);
+        }).status(500);
     }
 }
 
@@ -171,7 +171,7 @@ const deleteSpecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error deleting specialization: ${error.message}`
-        }).status(200);
+        }).status(500);
     }
 }
 const updateSpecialization = async (req, res) => {
@@ -217,7 +217,7 @@ const updateSpecialization = async (req, res) => {
         return res.response({
             success: 'false',
             message: `Error updating specialization: ${error.message}`
-        }).status(200);
+        }).status(500);
     }
 }
 module.exports = {
