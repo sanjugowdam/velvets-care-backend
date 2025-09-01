@@ -101,7 +101,7 @@ const getAllSpecializationsAdmin = async (req, res) => {
                         createdAt: e.createdAt,
                         updatedAt: e.updatedAt,
                         deletedAt: e.deletedAt,
-                        file: e.file ? FileFunctions.getFileUrl(e.file.files_url) : null,
+                        file: e.file,
                         doctorCount: e.doctors.length
                     }
                 }),
