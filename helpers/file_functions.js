@@ -97,7 +97,16 @@ const deleteFile = async (file_path) => {
     }
 };
 
+function getFileUrl(key, expiresIn = 3600) {
+    return s3.getSignedUrl('getObject', {
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Expires: expiresIn // in seconds (default 1 hour)
+    });
+}
+
 module.exports = {
     uploadFile,
-    deleteFile
+    deleteFile,
+    getFileUrl
 };
