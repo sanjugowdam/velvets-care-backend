@@ -86,7 +86,16 @@ const getAllSpecializationsAdmin = async (req, res) => {
             success: true,
             message: 'Specializations fetched successfully',
             data: {
-                specialization: specializationslist,
+                specialization: specializationslist.map(e => ({
+                    id: e.id,
+                    name: e.name,
+                    icon_id: e.icon_id,
+                    createdAt: e.createdAt,
+                    updatedAt: e.updatedAt,
+                    deletedAt: e.deletedAt,
+                    file: e.file,
+                    doctorCount: e.doctors.length
+                })),
                 total
             }
         });
