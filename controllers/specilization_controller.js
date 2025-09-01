@@ -86,7 +86,6 @@ const getAllSpecializationsAdmin = async (req, res) => {
             where: filter,
         });
 
-        console.log(specializationslist);
 
 
         return res.response({
