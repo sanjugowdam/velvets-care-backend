@@ -53,10 +53,9 @@ const uploadFile = async (file, store_path = "") => {
         };
 
         const data = await s3.upload(params).promise();
-        console.log(data);
 
 
-        const file_url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uniqueFileName}`;
+        const file_url = data?.Key;
 
         return {
             file_url,

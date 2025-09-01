@@ -24,7 +24,7 @@ const createSpecialization = async (req, res) => {
         let iconStore;
         if (icon) {
             const iconpath = 'uploads/specialization-icons/';
-            const iconFile = await FileFunctions.uploadFile(icon, 'icon', iconpath);
+            const iconFile = await FileFunctions.uploadFile(icon, 'icon/', iconpath);
             iconStore = await Files.create({
                 files_url: iconFile.file_url,
                 extension: iconFile.extension,
@@ -214,7 +214,7 @@ const updateSpecialization = async (req, res) => {
         }
         if (icon) {
             const iconpath = 'uploads/specialization-icons/';
-            const iconFile = await FileFunctions.uploadFile(icon, 'icon', iconpath);
+            const iconFile = await FileFunctions.uploadFile(icon, 'icon/', iconpath);
             const iconStore = await Files.create({
                 files_url: iconFile.file_url,
                 extension: iconFile.extension,
