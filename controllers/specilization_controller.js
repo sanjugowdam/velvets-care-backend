@@ -9,6 +9,7 @@ const {
 
 const { TwilioFunctions, FileFunctions } = require('../helpers');
 const { Doctors, Specialization, Files } = require('../models');
+const { TrunkPage } = require('twilio/lib/rest/trunking/v1/trunk');
 
 const createSpecialization = async (req, res) => {
     try {
@@ -77,6 +78,9 @@ const getAllSpecializationsAdmin = async (req, res) => {
             where: filter,
             offset,
             limit: limitNum,
+            raw: true,
+            mapToModel: true,
+            nest: TrunkPage
         });
         const total = await Specialization.count({
             where: filter,
@@ -86,16 +90,18 @@ const getAllSpecializationsAdmin = async (req, res) => {
             success: true,
             message: 'Specializations fetched successfully',
             data: {
-                specialization: specializationslist.map(e => ({
-                    id: e.id,
-                    name: e.name,
-                    icon_id: e.icon_id,
-                    createdAt: e.createdAt,
-                    updatedAt: e.updatedAt,
-                    deletedAt: e.deletedAt,
-                    file: e.file ? FileFunctions.getFileUrl(e.file.files_url) : null,
-                    doctorCount: e.doctors.length
-                })),
+                specialization: specializationslist.map(e => {
+                    return {
+                        id: e.id,
+                        name: e.name,
+                        icon_id: e.icon_id,
+                        createdAt: e.createdAt,
+                        updatedAt: e.updatedAt,
+                        deletedAt: e.deletedAt,
+                        file: e.file ? FileFunctions.getFileUrl(e.file.files_url) : null,
+                        doctorCount: e.doctors.length
+                    }
+                }),
                 total
             }
         });
