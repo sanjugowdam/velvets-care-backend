@@ -186,7 +186,7 @@ const deleteSpecialization = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
-        const { id } = req.payload;
+        const { id } = req.params;
         if (!id) {
             throw new Error('Specialization ID is required');
         }

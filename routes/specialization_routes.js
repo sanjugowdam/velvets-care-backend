@@ -5,21 +5,21 @@ const Boom = require('@hapi/boom');
 // src/routes/authRoutes.js
 const {
     SpecializationController: {
-      createSpecialization,
-    getAllSpecializationsAdmin,
-    getdoctorsbasedonspecialization,
-    getspecilaizationsUsers,
-    updateSpecialization,
-    deleteSpecialization
-        
+        createSpecialization,
+        getAllSpecializationsAdmin,
+        getdoctorsbasedonspecialization,
+        getspecilaizationsUsers,
+        updateSpecialization,
+        deleteSpecialization
+
     }
 } = require('../controllers');
 const {
     SpecializationValidator: {
-       CreateSpecializationValidator,
-    UpdateSpecializationValidator,
-    DeleteSpecializationValidator,
-    getadminspecialization
+        CreateSpecializationValidator,
+        UpdateSpecializationValidator,
+        DeleteSpecializationValidator,
+        getadminspecialization
     },
     HeaderValidator,
 } = require('../validators');
@@ -45,18 +45,18 @@ module.exports = [
                     throw Boom.badRequest(errors.join(', '));
                 }
             },
-              payload: {
-                                maxBytes: 5 * 1024 * 1024,
-                                parse: true,
-                                output: 'file',
-                                multipart: true,
-                                allow: 'multipart/form-data'
-                            },
-                            plugins: {
-                                'hapi-swagger': {
-                                    payloadType: 'form'
-                                }
-                            },
+            payload: {
+                maxBytes: 5 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
+                }
+            },
         },
         handler: createSpecialization
     },
@@ -93,7 +93,7 @@ module.exports = [
                 }
             }
         },
-        handler: getspecilaizationsUsers    
+        handler: getspecilaizationsUsers
     },
     {
         method: 'GET',
@@ -127,23 +127,23 @@ module.exports = [
             validate: {
                 headers: HeaderValidator,
                 payload: UpdateSpecializationValidator,
-            failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
-            }
-        },
-          payload: {
-                                maxBytes: 5 * 1024 * 1024,
-                                parse: true,
-                                output: 'file',
-                                multipart: true,
-                                allow: 'multipart/form-data'
-                            },
-                            plugins: {
-                                'hapi-swagger': {
-                                    payloadType: 'form'
-                                }
-                            },
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+            payload: {
+                maxBytes: 5 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
+                }
+            },
         },
         handler: updateSpecialization
     },
@@ -158,13 +158,13 @@ module.exports = [
             ],
             validate: {
                 headers: HeaderValidator,
-                payload: DeleteSpecializationValidator,
+                params: DeleteSpecializationValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
                 }
             }
         },
-        handler: deleteSpecialization   
+        handler: deleteSpecialization
     }
 ];
