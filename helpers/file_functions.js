@@ -52,7 +52,9 @@ const uploadFile = async (file, store_path = "") => {
             ContentType: file.hapi?.headers['content-type'] || file.headers?.['content-type'] || 'application/octet-stream'
         };
 
-        await s3.upload(params).promise();
+        const data = await s3.upload(params).promise();
+        console.log(data);
+
 
         const file_url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${uniqueFileName}`;
 
