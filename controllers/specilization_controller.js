@@ -80,7 +80,7 @@ const getAllSpecializationsAdmin = async (req, res) => {
             include: [
                 {
                     model: Doctors,
-                    attributes: [], // we only need count, not full doctor data
+                    attributes: ['id'], // we only need count, not full doctor data
                 },
                 {
                     model: Files,
