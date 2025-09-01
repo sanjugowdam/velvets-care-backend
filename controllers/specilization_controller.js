@@ -25,7 +25,7 @@ const createSpecialization = async (req, res) => {
         if (icon) {
             const iconpath = 'uploads/specialization-icons/';
             const iconFile = await FileFunctions.uploadFile(icon, 'icon', iconpath);
-             iconStore = await Files.create({
+            iconStore = await Files.create({
                 file_url: iconFile.file_url,
                 extension: iconFile.extension,
                 original_name: iconFile.original_name,
@@ -70,17 +70,23 @@ const getAllSpecializationsAdmin = async (req, res) => {
 
         const specializationslist = await Specialization.findAll({
             include: [{
-                 model: Files,
-             }],
+                model: Files,
+            }],
             where: filter,
             offset,
             limit: limitNum,
+        });
+        const total = await Specialization.count({
+            where: filter,
         });
 
         return res.response({
             success: true,
             message: 'Specializations fetched successfully',
-            data: specializationslist
+            data: {
+                specialization: specializationslist,
+                total
+            }
         });
 
     } catch (error) {
@@ -133,7 +139,7 @@ const getspecilaizationsUsers = async (req, res) => {
             throw new Error('Session expired');
         }
         const specialization = await Specialization.findOne({
-           include: [{
+            include: [{
                 model: Files,
             }],
         });
