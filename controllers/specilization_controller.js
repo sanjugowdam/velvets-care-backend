@@ -1,6 +1,8 @@
 
 const {
     Op,
+    fn,
+    col,
     where
 } = require('sequelize')
 const {
