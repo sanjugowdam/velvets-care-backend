@@ -1,8 +1,6 @@
 
 const {
     Op,
-    fn,
-    col,
     where
 } = require('sequelize')
 const {
@@ -70,24 +68,15 @@ const getAllSpecializationsAdmin = async (req, res) => {
             filter.name = { [Op.like]: `%${search}%` };
         }
 
-        const specializations = await Specialization.findAll({
-            attributes: [
-                'id',
-                'name',
-                'icon_id',
-                [fn('COUNT', col('Doctors.id')), 'doctors_count']
-            ],
-            include: [
-                {
-                    model: Doctors,
-                    attributes: ['id'], // we only need count, not full doctor data
-                },
-                {
-                    model: Files,
-                    attributes: ['id', 'file_name', 'file_url'],
-                }
-            ],
-            group: ['Specialization.id', 'Files.id'], // group by specialization and file (for joins)
+        const specializationslist = await Specialization.findAll({
+            include: [{
+                model: Files,
+            }, {
+                model: Doctors
+            }],
+            where: filter,
+            offset,
+            limit: limitNum,
         });
         const total = await Specialization.count({
             where: filter,
@@ -97,7 +86,7 @@ const getAllSpecializationsAdmin = async (req, res) => {
             success: true,
             message: 'Specializations fetched successfully',
             data: {
-                specializations,
+                specialization: specializationslist,
                 total
             }
         });
