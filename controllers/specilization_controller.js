@@ -208,7 +208,7 @@ const updateSpecialization = async (req, res) => {
         if (!id || !name) {
             throw new Error('Specialization ID and name are required');
         }
-        const specialization = await Specialization.findOne({ where: { id } });
+        let specialization = await Specialization.findOne({ where: { id } });
         if (!specialization) {
             throw new Error('Specialization not found');
         }
