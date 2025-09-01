@@ -98,6 +98,8 @@ const deleteFile = async (file_path) => {
 };
 
 function getFileUrl(key, expiresIn = 3600) {
+    console.log(key);
+
     return s3.getSignedUrl('getObject', {
         Bucket: BUCKET_NAME,
         Key: key,
