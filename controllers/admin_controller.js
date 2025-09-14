@@ -101,8 +101,8 @@ const send_otp_admin = async (req, res) => {
                     message: 'Invalid OTP',
                 })
             }
-            const access_token = await JWTFunctions.generateToken({ email: email, id: admin.id }, '1h');
-            const refresh_token = await JWTFunctions.generateToken({ email: email, id: admin.id}, '1d');
+            const access_token = await JWTFunctions.generateToken({ email: email, id: admin.id, role: 'ADMIN' }, '1h');
+            const refresh_token = await JWTFunctions.generateToken({ email: email, id: admin.id, role: 'ADMIN' }, '1d');
             await Admins.update({
                 access_token: access_token,
                 refresh_token: refresh_token,
@@ -134,61 +134,85 @@ const send_otp_admin = async (req, res) => {
         }
     }
 
-    const fetchAdmins = async (req, res) => {
-        try {
-             const session_user = req.headers.user;
-             console.log(session_user, "session checker");
+const validateSession = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
         if (!session_user) {
             throw new Error('Session expired');
         }
-            const admins = await Admins.findAll({
-                attributes: ['id', 'name', 'email'],
-            });
-            return res.response({
-                success: true,
-                message: 'Admins fetched successfully',
-                data: admins,
-            });
-        } catch (error) {
-            console.log(error);
-            return res.response({
-                success: false,
-                message: error.message,
-            }).code(200);
-        }
+        const admin = await Admins.findOne({
+            where: {
+                id: session_user.id
+            }
+        });
+        return res.response({
+            success: true,
+            message: 'Admins session verified successfully',
+            data: admin,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
     }
+}
+const fetchAdmins = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const admins = await Admins.findAll({
+            attributes: ['id', 'name', 'email'],
+        });
+        return res.response({
+            success: true,
+            message: 'Admins fetched successfully',
+            data: admins,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
+    }
+}
 
-    const createAdmin = async (req, res) => {
-        try {
-            const session_user = req.headers.user;
-            if (!session_user) {
-                throw new Error('Session expired');
-            }
-            const { name, email } = req.payload;
-            const admin_existing = await Admins.findOne({ where: { email: email } });
-            if (admin_existing) {
-                throw new Error('Admin already exists');
-            }
-            const admin = await Admins.create({
-                name: name,
-                email: email
-            });
-            return res.response({
-                success: true,
-                message: 'Admin created successfully',
-                data: admin,
-            });
-        } catch (error) {
-            console.log(error);
-            return res.response({
-                success: false,
-                message: error.message,
-            }).code(200);
+const createAdmin = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
         }
+        const { name, email } = req.payload;
+        const admin_existing = await Admins.findOne({ where: { email: email } });
+        if (admin_existing) {
+            throw new Error('Admin already exists');
+        }
+        const admin = await Admins.create({
+            name: name,
+            email: email
+        });
+        return res.response({
+            success: true,
+            message: 'Admin created successfully',
+            data: admin,
+        });
+    } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
     }
+}
 module.exports = {
     send_otp_admin,
     verify_otp_admin,
     fetchAdmins,
-    createAdmin
+    createAdmin,
+    validateSession
 }
