@@ -28,7 +28,7 @@ const updateBasicDetails = async (req, h) => {
             full_name, gender, date_of_birth, phone, email,
             specialization, years_of_experience, registration_number,
             registration_certificate, medical_degree_certificate,
-            consultation_fee, consultation_modes, languages_spoken,profile_image, government_id, pan_card
+            consultation_fee, consultation_modes, languages_spoken, profile_image, government_id, pan_card
         } = req.payload;
         console.log(req.payload, "payload");
         const existing_doctor = await Doctors.findOne({
@@ -172,101 +172,101 @@ const updateAddress = async (req, h) => {
                 latitude: latitude,
                 longitude: longitude
             },
-        {
-            where: {
-                id: available_address.id
-            }
-        });
+                {
+                    where: {
+                        id: available_address.id
+                    }
+                });
         }
-        else{
- const address = await Adresses.create({
-            street: street,
-            area: area,
-            city: city,
-            state: state,
-            country: country,
-            zip: zip,
-            landmark: landmark,
-            latitude: latitude,
-            longitude: longitude,
-            doctor_id: doctor_id
-        });
+        else {
+            const address = await Adresses.create({
+                street: street,
+                area: area,
+                city: city,
+                state: state,
+                country: country,
+                zip: zip,
+                landmark: landmark,
+                latitude: latitude,
+                longitude: longitude,
+                doctor_id: doctor_id
+            });
         }
         // await Doctor.update({ address_id: address.id }, { where: { id: doctor_id } });
-        return h.response({ 
-            success: true, 
+        return h.response({
+            success: true,
             message: 'Address updated successfully',
-            data: address 
+            data: address
         }).code(201);
     } catch (err) {
         console.error(err);
         return h.response({
-             success: false,
-              message: 'Error saving address'
-             }).code(200);
+            success: false,
+            message: 'Error saving address'
+        }).code(200);
     }
 };
 
 
 
 const updateAvailability = async (req, h) => {
-  try {
-    const session_user = req.headers.user;
-    if (!session_user) {
-      throw new Error('Session expired');
-    }
-
-    const { doctor_id, availability } = req.payload;
-
-    const doctor = await Doctors.findOne({ where: { id: doctor_id } });
-    if (!doctor) {
-      throw new Error('Doctor not found');
-    }
-
-    for (const slot of availability) {
-      const existingSlot = await Doctorsavailability.findOne({
-        where: {
-          doctor_id,
-          day: slot.day,
-          start_time: slot.start_time,
-          end_time: slot.end_time
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
         }
-      });
 
-      if (existingSlot) {
-        // Update slot if needed
-        await existingSlot.update({
-          ...slot
-        },
-        {
-          where: {
-            id: existingSlot.id
-          }
-        });
-      } else {
-        // Create new slot
-        await Doctorsavailability.create({
-          doctor_id,
-          day: slot.day,
-          start_time: slot.start_time,
-          end_time: slot.end_time
-        });
-      }
+        const { doctor_id, availability } = req.payload;
+
+        const doctor = await Doctors.findOne({ where: { id: doctor_id } });
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+
+        for (const slot of availability) {
+            const existingSlot = await Doctorsavailability.findOne({
+                where: {
+                    doctor_id,
+                    day: slot.day,
+                    start_time: slot.start_time,
+                    end_time: slot.end_time
+                }
+            });
+
+            if (existingSlot) {
+                // Update slot if needed
+                await existingSlot.update({
+                    ...slot
+                },
+                    {
+                        where: {
+                            id: existingSlot.id
+                        }
+                    });
+            } else {
+                // Create new slot
+                await Doctorsavailability.create({
+                    doctor_id,
+                    day: slot.day,
+                    start_time: slot.start_time,
+                    end_time: slot.end_time
+                });
+            }
+        }
+
+        return h.response({
+            success: true,
+            message: 'Availability updated successfully',
+            data: availability
+        }).code(200);
+
+    } catch (err) {
+        console.error(err);
+        return h.response({
+            success: false,
+            message: err.message || 'Error updating availability'
+        }).code(500);
     }
-
-    return h.response({
-      success: true,
-      message: 'Availability updated successfully',
-      data: availability
-    }).code(200);
-
-  } catch (err) {
-    console.error(err);
-    return h.response({
-      success: false,
-      message: err.message || 'Error updating availability'
-    }).code(500);
-  }
 };
 
 
@@ -278,26 +278,27 @@ const updateStatus = async (req, h) => {
         }
         const { doctor_id, status, verified } = req.payload;
 
-        await Doctors.update({ 
+        await Doctors.update({
             status: status,
-             verified: verified 
-            }, 
+            verified: verified
+        },
             {
-             where: {
-                 id: doctor_id 
-                } });
+                where: {
+                    id: doctor_id
+                }
+            });
 
         return h.response({
-             success: true,
-             message: 'Status updated'
+            success: true,
+            message: 'Status updated'
 
-             }).code(200);
+        }).code(200);
     } catch (err) {
         console.error(err);
         return h.response({
-             success: false,
-              message: 'Error updating status'
-             }).code(200);
+            success: false,
+            message: 'Error updating status'
+        }).code(200);
     }
 };
 const doctorlist_user = async (req, h) => {
@@ -306,18 +307,18 @@ const doctorlist_user = async (req, h) => {
         // if (!session_user) {
         //     throw new Error('Session expired');
         // }
-        const doctor = await Doctors.findAll({ 
-                include: [
-                    {
-                        model: Adresses
-                    },
-                    {
-                        model: Doctorsavailability
-                    }
-                ],
+        const doctor = await Doctors.findAll({
+            include: [
+                {
+                    model: Adresses
+                },
+                {
+                    model: Doctorsavailability
+                }
+            ],
             where: {
-                 verified: true
-                 }
+                verified: true
+            }
         });
         return h.response({
             success: true,
@@ -393,7 +394,7 @@ const doctorlist = async (req, h) => {
         } else {
             // If no pagination, return minimal info
             const basicDoctors = await Doctors.findAll({
-                attributes: ['id', 'full_name', 'phone', 'email'],
+                attributes: ['id', 'full_name', 'phone', 'email', 'consultation_modes'],
                 where: filter,
             });
 
@@ -451,16 +452,16 @@ module.exports = {
 }
 
 
-// Clinic 
-// 1)name 
+// Clinic
+// 1)name
 // 2)address same table
 // 3)phone clinic
-// 4)email clinic 
-// 5)image clinic, 
+// 4)email clinic
+// 5)image clinic,
 // 6)description
 
 
-// clicninc dpct 
+// clicninc dpct
 // 1)dr id
 // 2)clinic id
 // 3) monday start dateandend , monday end
