@@ -565,6 +565,7 @@ const getDoctorAvailableTimeSlots = async (req, res) => {
 
         // 4️⃣ Lookups
         const user = await Users.findByPk(session_user.user_id);
+        if (session_user.role != 'ADMIN' && !user) throw new Error('Invalid user')
         const doctor = await Doctors.findByPk(doctor_id, { raw: true });
         if (!doctor) throw new Error('Invalid doctor');
 
