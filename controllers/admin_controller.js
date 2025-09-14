@@ -69,7 +69,7 @@ const send_otp_admin = async (req, res) => {
     }
 },
 
-    verify_otp_admin = async (req, res) => {
+    constverify_otp_admin = async (req, res) => {
         try {
             const { email, otp } = req.payload;
             const admin = await Admins.findOne({ where: { email: email } });
@@ -143,7 +143,12 @@ const validateSession = async (req, res) => {
         const admin = await Admins.findOne({
             where: {
                 id: session_user.id
-            }
+            },
+            attributes: [
+                'id',
+                'name',
+                'email',
+            ]
         });
         return res.response({
             success: true,
