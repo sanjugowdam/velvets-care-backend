@@ -1,6 +1,6 @@
 const {
     SessionValidator,
-    
+
 } = require('../middlewares')
 const Boom = require('@hapi/boom');
 // src/routes/authRoutes.js
@@ -14,13 +14,14 @@ const {
 } = require('../controllers');
 const {
     AdminValidator: {
-    login_admin,
-    verify_otp_admin_validotor,
-    update_admin_profile,
-    Create_admin
+        login_admin,
+        verify_otp_admin_validotor,
+        update_admin_profile,
+        Create_admin
     },
     HeaderValidator,
 } = require('../validators');
+const { validateSession } = require('../controllers/admin_controller');
 
 
 
@@ -34,7 +35,7 @@ module.exports = [
             description: 'Send otp to admin',
             tags,
             validate: {
-                payload : login_admin ,
+                payload: login_admin,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
@@ -79,6 +80,25 @@ module.exports = [
             }
         },
         handler: fetchAdmins,
+    },
+    {
+        method: 'GET',
+        path: '/admin/verify-session',
+        options: {
+            description: 'Get list of admins',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            }
+        },
+        handler: validateSession,
     },
     {
         method: 'POST',

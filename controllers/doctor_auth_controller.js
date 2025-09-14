@@ -1,5 +1,5 @@
 
-const { Doctors, Otps, Users, Files, Doctorsavailability, Adresses,Specialization } = require('../models');
+const { Doctors, Otps, Users, Files, Doctorsavailability, Adresses, Specialization } = require('../models');
 const {
     OTPFunctions, JWTFunctions, TwilioFunctions
 } = require('../helpers')
@@ -87,7 +87,8 @@ const doctor_verify_otp = async (req, res) => {
         let payload = {
             doctor_id: doctor.id,
             phone: doctor.phone,
-            name: doctor.full_name
+            name: doctor.full_name,
+            role: 'DOCTOR'
         };
 
         if (DEMO_OTP == otp) {
@@ -239,7 +240,7 @@ const doctor_update_profile = async (req, res) => {
             throw new Error('Session expired');
         }
 
-        const { full_name, phone,email, gender, profile_image, dob } = req.payload;
+        const { full_name, phone, email, gender, profile_image, dob } = req.payload;
         const doctor = await Doctors.findOne({ where: { id: session_doctor.doctor_id } });
         if (!doctor) {
             throw new Error('Doctor not found');
@@ -341,7 +342,7 @@ const getDoctorProfile = async (req, res) => {
 
         const doctor = await Doctors.findOne({
             where: { id: session_doctor.doctor_id },
-            attributes: ['id', 'full_name', 'phone', 'email', 'gender',  'profile_image_id'],
+            attributes: ['id', 'full_name', 'phone', 'email', 'gender', 'profile_image_id'],
             include: [{
                 model: Files,
                 as: 'profile_image',
@@ -354,11 +355,11 @@ const getDoctorProfile = async (req, res) => {
             {
                 model: Adresses,
             },
-            // {
-            //     model: Specialization,
-            //     attributes: ['id', 'name']
-            // }
-        ],
+                // {
+                //     model: Specialization,
+                //     attributes: ['id', 'name']
+                // }
+            ],
             raw: true
         });
         if (!doctor) {
