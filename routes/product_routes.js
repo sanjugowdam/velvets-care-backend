@@ -7,15 +7,27 @@ const Boom = require('@hapi/boom');
 // src/routes/authRoutes.js
 const {
     ProductController: {
-          CreateProduct,
+         CreateProduct,
+    UpdateProduct,
+    DeleteProduct,
+    DeleteProductImage,
+    GetImagesByProduct,
     GetProductById,
-    uploadProductImage,
+    AdminProducts,
+    UserProducts,
+    UploadProductImage,
+
     }
 } = require('../controllers');
 const {
     ProductValidator: {
-        createProductValidator,
-        createimageValidator
+    createProductValidator,
+    updateProductValidator,
+    deleteProductValidator,
+    uploadProductImagesValidator,
+    fetchAdminProductValidator,
+    fetchUserProductValidator,
+    fetchSingleProductValidator
     },
     HeaderValidator,
 } = require('../validators');
@@ -55,7 +67,7 @@ module.exports = [
             SessionValidator
         ],
             validate: {
-                payload: createimageValidator,
+                payload: uploadProductImagesValidator,
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
@@ -75,6 +87,130 @@ module.exports = [
                 }
             }
         },
-        handler: uploadProductImage
+        handler: UploadProductImage,
+
+    },
+    {
+        method: 'PUT',
+        path: '/products/{id}',
+        options: {
+            description: 'Update a product',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                payload: updateProductValidator,
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: UpdateProduct
+    },
+    {
+        method: 'DELETE',
+        path: '/products/{id}',
+        options: {
+            description: 'Delete a product',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                params: deleteProductValidator,
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: DeleteProduct
+    },
+    {
+        method: 'DELETE',
+        path: '/products/{id}/images/{imageId}',
+        options: {
+            description: 'Delete a product image',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                params: deleteProductValidator,
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: DeleteProductImage
+    },
+
+    {
+        method: 'GET',
+        path: '/admin/products',
+        options: {
+            description: 'Fetch a single product',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                query: fetchAdminProductValidator,
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: AdminProducts,
+
+    },
+    {
+        method: 'GET',
+        path: '/user/products',
+        options: {
+            description: 'Fetch all products',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: UserProducts
+    },
+    // get imges by product id
+    {
+        method: 'GET',
+        path: '/products/{id}/images',
+        options: {
+            description: 'Get images by product id',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                params: fetchSingleProductValidator,
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: GetImagesByProduct
     }
+
 ];  
