@@ -24,6 +24,9 @@ module.exports = {
   DiscountedProducts: require('./discountedproduct'),
   Subcategories: require('./subcategory'),
   ProductImages: require('./productimage'),
+  Orders: require('./order'),
+  OrderItems: require('./orderitem'),
+  Payments: require('./payment'),
 
   // Notifications: require('./notifications'),
   // SustainabilityScore: require('./sustainability_score'),

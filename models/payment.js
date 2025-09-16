@@ -1,17 +1,16 @@
 'use strict';
 const {
-  Model
+  Model,
+  DataTypes
 } = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
+const{
+  tables: {
+    Payments
+  },
+  sequelize
+} = require('../config');
+const Order = require('./order');
   class Payment extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
-    static associate(models) {
-      // define association here
-    }
   }
   Payment.init({
     order_id: DataTypes.INTEGER,
@@ -25,7 +24,11 @@ module.exports = (sequelize, DataTypes) => {
     notes: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'Payment',
+    modelName: Payments,
+    paranoid: true
   });
-  return Payment;
-};
+
+  Payment.belongsTo(Order, { foreignKey: 'order_id' });
+  Order.hasMany(Payment, { foreignKey: 'order_id' });
+
+module.exports = Payment;

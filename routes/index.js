@@ -10,4 +10,13 @@ module.exports = [
     ...require('./agora_routes'),
     ...require('./specialization_routes'),
     ...require('./product_routes'),
+    ...require('./category_routes'),
+    ...require('./subcategory_routes'),
+    ...require('./brand_routes'),
+    ...require('./cart_routes'),
+    ...require('./wishlist_routes'),
+    ...require('./discount_routes'),
+    ...require('./discountedusers_routes'),
+    ...require('./discountedproducts_routes'),
+    ...require('./order_routes'),
 ]

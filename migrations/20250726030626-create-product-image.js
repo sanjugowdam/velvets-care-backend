@@ -1,8 +1,15 @@
 'use strict';
+const {
+  tables: {
+    ProductImages
+  },
+  sequelize
+} = require('../config');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('ProductImages', {
+    await queryInterface.createTable(ProductImages, {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -31,10 +38,13 @@ module.exports = {
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
+      },
+      deletedAt: {
+        type: Sequelize.DATE
       }
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('ProductImages');
+    await queryInterface.dropTable(ProductImages);
   }
 };

@@ -10,6 +10,8 @@ const{
   },
   sequelize
 } = require('../config');
+const Discount = require('./discount');
+const Product = require('./product');
   class DiscountedProduct extends Model {
     
   }
@@ -22,4 +24,11 @@ const{
     paranoid: true,
     modelName: DiscountedProducts,
   });
+
+  DiscountedProduct.belongsTo(Discount, { foreignKey: 'discount_id' });
+  Discount.hasMany(DiscountedProduct, { foreignKey: 'discount_id' });
+
+  DiscountedProduct.belongsTo(Product, { foreignKey: 'product_id' });
+  Product.hasMany(DiscountedProduct, { foreignKey: 'product_id' });
+
 module.exports = DiscountedProduct;

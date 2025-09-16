@@ -6,48 +6,45 @@ const {
 const Boom = require('@hapi/boom');
 // src/routes/authRoutes.js
 const {
-    ProductController: {
-         CreateProduct,
-    UpdateProduct,
-    DeleteProduct,
-    DeleteProductImage,
-    GetImagesByProduct,
-    GetProductById,
-    AdminProducts,
-    UserProducts,
-    UploadProductImage,
-
+    DiscountController: {
+     CreateDiscount,
+    UpdateDiscount,
+    DeleteDiscount,
+    GetDiscountById,
+    AdminDiscounts,
+    AssignDiscountToProduct,
+    AssignDiscountToUser,
+    ValidateDiscountUsage
     }
 } = require('../controllers');
 const {
-    ProductValidator: {
-    createProductValidator,
-    updateProductValidator,
-    deleteProductValidator,
-    uploadProductImagesValidator,
-    fetchAdminProductValidator,
-    fetchUserProductValidator,
-    fetchSingleProductValidator
-    },
+    DiscountValidator: {
+    create_discount_validator,
+    update_discount_validator,
+    assign_discount_to_product_validator,
+    assign_discount_to_user_validator,
+    validate_discount_usage_validator,
+    fetch_single_discount_validator
+
+    }
+} = require('../validators');
+const {
     HeaderValidator,
 } = require('../validators');
+const tags = ["api", "Discounts"];
 
-
-
-const tags = ["api", "Products"];
 module.exports = [
     {
         method: 'POST',
-        path: '/products',
+        path: '/discount/create',
         options: {
-            description: 'Create a new product',
-        tags,
-        pre: [
-            SessionValidator
-        ],
-        
+            description: 'Create a new discount',
+            tags,
+            pre: [
+                SessionValidator
+            ],
             validate: {
-                payload: createProductValidator,
+                payload: create_discount_validator,
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
@@ -55,52 +52,58 @@ module.exports = [
                 }
             },
         },
-        handler: CreateProduct
+        handler: CreateDiscount 
+    },
+    {
+        method: 'GET',
+        path: '/discount/admin',
+        options: {
+            description: 'Get all discounts',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: AdminDiscounts 
+    },
+    {
+        method: 'GET',
+        path: '/discount/{id}',
+        options: {
+            description: 'Get a discount by ID',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                params: fetch_single_discount_validator,
+                headers: HeaderValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: GetDiscountById                    
     },
     {
         method: 'POST',
-        path: '/products/{id}/images',
+        path: '/discount/update',
         options: {
-          description: 'Create a new product image',
-        tags,
-        pre: [
-            SessionValidator
-        ],
-            validate: {
-                payload: uploadProductImagesValidator,
-                headers: HeaderValidator,
-                failAction: (request, h, err) => {
-                    const errors = err.details.map(e => e.message);
-                    throw Boom.badRequest(errors.join(', '));
-                }
-            },
-             payload: {
-                maxBytes: 20 * 1024 * 1024,
-                parse: true,
-                output: 'file',
-                multipart: true,
-                allow: 'multipart/form-data'
-            },
-            plugins: {
-                'hapi-swagger': {
-                    payloadType: 'form'
-                }
-            }
-        },
-        handler: UploadProductImage,
-
-    },
-    {
-        method: 'PUT',
-        path: '/products/{id}',
-        options: {
-            description: 'Update a product',
+            description: 'Update a discount',
             tags,
             pre: [
                 SessionValidator
             ],
             validate: {
-                payload: updateProductValidator,
+                payload: update_discount_validator,
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
@@ -108,19 +111,19 @@ module.exports = [
                 }
             },
         },
-        handler: UpdateProduct
+        handler: UpdateDiscount                    
     },
     {
         method: 'DELETE',
-        path: '/products/{id}',
+        path: '/discount/{id}',
         options: {
-            description: 'Delete a product',
+            description: 'Delete a discount',
             tags,
             pre: [
                 SessionValidator
             ],
             validate: {
-                params: deleteProductValidator,
+                params: fetch_single_discount_validator,
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
@@ -128,19 +131,19 @@ module.exports = [
                 }
             },
         },
-        handler: DeleteProduct
+        handler: DeleteDiscount                    
     },
     {
-        method: 'DELETE',
-        path: '/products/{id}/images/{imageId}',
+        method: 'POST',
+        path: '/discount/assign/product',
         options: {
-            description: 'Delete a product image',
+            description: 'Assign a discount to a product',
             tags,
             pre: [
                 SessionValidator
             ],
             validate: {
-                params: deleteProductValidator,
+                payload: assign_discount_to_product_validator,
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
@@ -148,62 +151,39 @@ module.exports = [
                 }
             },
         },
-        handler: DeleteProductImage
-    },
-
-    {
-        method: 'GET',
-        path: '/admin/products',
-        options: {
-            description: 'Fetch a single product',
-            tags,
-            pre: [
-                SessionValidator
-            ],
-            validate: {
-                query: fetchAdminProductValidator,
-                headers: HeaderValidator,
-                failAction: (request, h, err) => {
-                    const errors = err.details.map(e => e.message);
-                    throw Boom.badRequest(errors.join(', '));
-                }
-            },
-        },
-        handler: AdminProducts,
-
+        handler: AssignDiscountToProduct                    
     },
     {
-        method: 'GET',
-        path: '/user/products',
+        method: 'POST',
+        path: '/discount/assign/user',
         options: {
-            description: 'Fetch all products',
+            description: 'Assign a discount to a user',
             tags,
             pre: [
                 SessionValidator
             ],
             validate: {
+                payload: assign_discount_to_user_validator,
                 headers: HeaderValidator,
-                query: fetchUserProductValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
                 }
             },
         },
-        handler: UserProducts
+        handler: AssignDiscountToUser                    
     },
-    // get imges by product id
     {
-        method: 'GET',
-        path: '/products/{id}/images',
+        method: 'POST',
+        path: '/discount/validate',
         options: {
-            description: 'Get images by product id',
+            description: 'Validate a discount usage',
             tags,
             pre: [
                 SessionValidator
             ],
             validate: {
-                params: fetchSingleProductValidator,
+                payload: validate_discount_usage_validator,
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
@@ -211,29 +191,6 @@ module.exports = [
                 }
             },
         },
-        handler: GetImagesByProduct
+        handler: ValidateDiscountUsage
     },
-
-    // get product by id
-    {
-        method: 'GET',
-        path: '/products/{id}',
-        options: {
-            description: 'Get product by id',
-            tags,
-            pre: [
-                SessionValidator
-            ],
-            validate: {
-                params: fetchSingleProductValidator,
-                headers: HeaderValidator,
-                failAction: (request, h, err) => {
-                    const errors = err.details.map(e => e.message);
-                    throw Boom.badRequest(errors.join(', '));
-                }
-            },
-        },
-        handler: GetProductById
-    }
-
-];  
+            ]
