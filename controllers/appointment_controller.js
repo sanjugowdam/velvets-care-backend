@@ -208,14 +208,51 @@ const DoctorApproval = async (req, h) => {
             throw new Error(`Only pending appointments can be approved. Current status: ${appointment.status}`);
         }
         // Update status to approved
-        await Appointments.update({
+       const updatedAppointment = await Appointments.update({
             status: 'approved'
-        }
-            , { where: { id: appointmentId } });
+        }, { where: { id: appointmentId } });
 
         return h.response({
             success: true,
             message: 'Appointment approved successfully',
+            data: updatedAppointment
+        });
+    } catch (error) {
+        console.error(error);
+        return h.response({
+            success: false,
+            message: error.message
+        }).code(200);
+    }
+};
+
+const UpdateAppointmentStatus = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
+
+        const doctor_id = session_user.doctor_id;
+       const {appointmentId} = req.params;
+        const { status } = req.payload;
+
+        const appointment = await Appointments.findByPk(appointmentId);
+        if (!appointment) {
+            throw new Error('Appointment not found');
+        }
+        if (appointment.doctor_id !== doctor_id) {
+            throw new Error('Unauthorized: This is not your appointment');
+        }
+        if (appointment.status !== 'approved') {
+            throw new Error(`Only approved appointments can have status updated. Current status: ${appointment.status}`);
+        }
+        if (!['completed', 'no_show'].includes(status)) {
+            throw new Error('Invalid status. Allowed values are: completed, no_show');
+        }
+        // Update status
+        await appointment.update({ status });
+        return h.response({
+            success: true,
+            message: 'Appointment status updated successfully',
             data: appointment
         });
     } catch (error) {
@@ -713,6 +750,7 @@ module.exports = {
     checkDoctorAvailability,
     getDoctorAvailableTimeSlots,
     getTodaysAppointmentsDoctor,
+    UpdateAppointmentStatus
 }
 
 

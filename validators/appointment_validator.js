@@ -146,6 +146,20 @@ const slotcheckingValidator = Joi.object({
         'any.required': 'Date is required',
     }),
 });
+
+const updateAppointmentStatusValidator = Joi.object({
+    status: Joi.string().valid('no_show', 'completed').required().messages({
+        'string.empty': 'Status is required',
+        'any.required': 'Status is required',
+    }),
+
+});
+const UpdateAppointmentStatusParams = Joi.object({
+    appointmentId: Joi.string().uuid().required().messages({
+        'string.empty': 'Appointment ID is required',
+        'any.required': 'Appointment ID is required',
+    }),
+});
 module.exports = {
     appointmentValidator,
     razorpayPaymentValidator,
@@ -155,6 +169,8 @@ module.exports = {
     fetchdoctorAppointmentsValidator,
     appointment,
     slotcheckingValidator,
+    updateAppointmentStatusValidator,
+    UpdateAppointmentStatusParams
 
     
 }
