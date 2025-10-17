@@ -14,6 +14,8 @@ const {
     checkDoctorAvailability,
     getDoctorAvailableTimeSlots,
     getTodaysAppointmentsDoctor,
+    UpdateAppointmentStatus
+
     }
 } = require('../controllers');
 const {
@@ -24,7 +26,9 @@ const {
     fecthAppointmentsValidator,
     fetchdoctorAppointmentsValidator,
     appointment,
-    slotcheckingValidator
+    slotcheckingValidator,
+    UpdateAppointmentStatusParams,
+    updateAppointmentStatusValidator
     },
     HeaderValidator,
 } = require('../validators');
@@ -278,6 +282,49 @@ module.exports = [
             },
         },
         handler: getTodaysAppointmentsDoctor,
-    }
-
+    },
+    {
+        method: 'PUT',
+        path: '/appointment/{appointmentId}/status',
+        options: {
+            description: 'Update appointment status',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                params: UpdateAppointmentStatusParams,
+                payload: updateAppointmentStatusValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: UpdateAppointmentStatus,
+    },
+//     {
+//         method: 'PUT',
+//         path: '/admin/appointment/{id}/status',
+//         options: {
+//             description: 'Update appointment status',
+//             tags,
+//             pre: [
+//                 SessionValidator
+//             ],
+//             validate: {
+//                 headers: HeaderValidator,
+//                 params: appointment,
+//             payload: Joi.object({
+//                 status: Joi.string().valid('completed', 'no_show').required()
+//             }),
+//             failAction: (request, h, err) => {
+//                 const errors = err.details.map(e => e.message);
+//                 throw Boom.badRequest(errors.join(', '));
+//             }
+//         },
+//     },
+//     handler: UpdateAppointmentStatus,
+// }
 ]
