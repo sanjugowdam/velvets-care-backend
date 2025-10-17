@@ -12,6 +12,7 @@ const {
         doctorlist_user,
         doctorlist,
         fetch_single_doctor,
+        fetch_popular_doctors
         
     }
 } = require('../controllers');
@@ -186,4 +187,23 @@ module.exports = [
         handler: fetch_single_doctor
     }
 },
-];
+{
+    method: 'GET',
+    path: '/user/doctor/popular',
+    options: {
+        description: 'Get popular doctors',
+        tags,
+        pre: [
+            SessionValidator
+        ],
+        validate: {
+            headers: HeaderValidator,
+            failAction: (request, h, err) => {
+                const errors = err.details.map(e => e.message);
+                throw Boom.badRequest(errors.join(', '));
+            }
+        },
+        handler: fetch_popular_doctors
+    }
+}
+];  
