@@ -8,6 +8,8 @@ const {
 } = require('../models')
 const {
     Op,
+    fn,
+    col,
     where
 } = require('sequelize')
 const {
@@ -483,7 +485,7 @@ const fetch_popular_doctors = async (req, h) => {
                     as: 'profile_image',
                     attributes: ['file_url']
                 },
-                
+
             ],
             raw: true,
             nest: true
