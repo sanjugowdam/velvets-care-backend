@@ -3,7 +3,8 @@ const {
     Doctorsavailability,
     Adresses,
     Otps,
-    Files
+    Files,
+    Appointments
 } = require('../models')
 const {
     Op,
@@ -441,6 +442,74 @@ const fetch_single_doctor = async (req, h) => {
         }).code(200);
     }
 }
+
+const fetch_popular_doctors = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+
+        // Count how many completed appointments each doctor has
+        const popularDoctors = await Appointments.findAll({
+            where: { status: 'completed' },
+            attributes: [
+                'doctor_id',
+                [fn('COUNT', col('doctor_id')), 'completed_count']
+            ],
+            group: ['doctor_id'],
+            order: [[fn('COUNT', col('doctor_id')), 'DESC']],
+            limit: 10, // top 10 doctors
+            raw: true
+        });
+
+        if (!popularDoctors.length) {
+            return h.response({
+                success: true,
+                message: 'No popular doctors found',
+                data: []
+            }).code(200);
+        }
+
+        // Extract doctor IDs
+        const doctorIds = popularDoctors.map(d => d.doctor_id);
+
+        // Fetch doctor details
+        const doctors = await Doctors.findAll({
+            where: { id: { [Op.in]: doctorIds } },
+            include: [
+                {
+                    model: Files,
+                    as: 'profile_image',
+                    attributes: ['file_url']
+                }
+            ],
+            raw: true,
+            nest: true
+        });
+
+        // Merge appointment counts with doctor details
+        const merged = doctors.map(doc => {
+            const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
+            return { ...doc, completed_appointments: count };
+        });
+
+        return h.response({
+            success: true,
+            message: 'Popular doctors fetched successfully',
+            data: merged
+        }).code(200);
+
+    } catch (err) {
+        console.error('Error fetching popular doctors:', err);
+        return h.response({
+            success: false,
+            message: err.message
+        }).code(400);
+    }
+};
+
+
 module.exports = {
     updateBasicDetails,
     updateAddress,
@@ -449,6 +518,7 @@ module.exports = {
     doctorlist_user,
     doctorlist,
     fetch_single_doctor,
+    fetch_popular_doctors
 }
 
 
