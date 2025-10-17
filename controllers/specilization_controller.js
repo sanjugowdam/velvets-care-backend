@@ -157,7 +157,7 @@ const getspecilaizationsUsers = async (req, res) => {
         if (!session_user) {
             throw new Error('Session expired');
         }
-        const specialization = await Specialization.findOne({
+        const specialization = await Specialization.findAll({
             include: [{
                 model: Files,
             }],
