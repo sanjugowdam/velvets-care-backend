@@ -155,7 +155,7 @@ const updateAppointmentStatusValidator = Joi.object({
 
 });
 const UpdateAppointmentStatusParams = Joi.object({
-    appointmentId: Joi.string().uuid().required().messages({
+    appointmentId: Joi.number().integer().required().messages({
         'string.empty': 'Appointment ID is required',
         'any.required': 'Appointment ID is required',
     }),
