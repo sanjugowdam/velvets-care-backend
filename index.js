@@ -28,7 +28,6 @@ const init = async () => {
         routes: {
             cors: {
                 origin: ['*'],
-                methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
             }
         }
     });
