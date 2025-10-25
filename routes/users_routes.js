@@ -13,7 +13,8 @@ const {
         update_user,
         user_refresh_token,
         getusers,
-        getuserData
+        getuserData,
+        CreateUserByAdmin
         
     }
 } = require('../controllers');
@@ -209,5 +210,25 @@ module.exports = [
             },
         },
         handler: getuserData,
+    },
+    {
+        method: 'POST',
+        path: '/admin/user',
+        options: {
+            description: 'Create user by admin',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                payload: update_user_profile,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: CreateUserByAdmin,
     }
 ];
