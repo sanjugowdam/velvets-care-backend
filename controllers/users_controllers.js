@@ -477,6 +477,40 @@ const getuserData = async (request, h) => {
     }
 };
 
+const CreateUserByAdmin = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const { name, phone, gender, profile_image, dob } = req.payload;
+
+        const existing_user = await Users.findOne({ where: { email } });
+        if (existing_user) {
+            throw new Error('User already exists');
+        }
+
+        const user = await Users.create({
+            name,
+            phone,
+            gender,
+            profile_image,
+            dob
+        });
+        return res.response({
+            success: true,
+            message: 'User created successfully',
+            data: user
+        }).code(200);
+    } catch (error) {
+        console.log(error);
+        return res.response({
+            success: false,
+            message: error.message,
+        }).code(200);
+    }
+}
+
 module.exports = {
     request_otp_login,
     request_otp_register,
@@ -487,7 +521,8 @@ module.exports = {
     user_refresh_token,
     getusers,
     googleSignIn,
-    getuserData
+    getuserData,
+    CreateUserByAdmin
 
 
 
