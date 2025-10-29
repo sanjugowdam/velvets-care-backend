@@ -485,7 +485,7 @@ const CreateUserByAdmin = async (req, res) => {
         }
         const { name, phone, gender, profile_image, dob } = req.payload;
 
-        const existing_user = await Users.findOne({ where: { email } });
+        const existing_user = await Users.findOne({ where: { phone } });
         if (existing_user) {
             throw new Error('User already exists');
         }
