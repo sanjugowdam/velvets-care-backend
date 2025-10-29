@@ -409,7 +409,7 @@ const getadminAppointments = async (req, res) => {
             where: filter,
             limit: limit,
             offset: (page - 1) * limit,
-            order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
+            order: [['appointment_date', 'DESC'], ['appointment_time', 'DESC']],
             include: [{
                 model: Users,
                 attributes: ['id', 'name', 'email', 'phone']
