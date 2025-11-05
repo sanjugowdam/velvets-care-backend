@@ -52,6 +52,7 @@ const uploadFile = async (file, store_path = "") => {
         };
 
         const data = await s3.upload(params).promise();
+        console.log(`File uploaded successfully at ${data}`);
 
         // ✅ Return the actual full URL instead of just the key
         const file_url = data?.Location || `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${data.Key}`;
