@@ -28,9 +28,7 @@ const getFile = async (req, res) => {
         const { path } = req.payload
         return {
             success: true,
-            data: {
-                ...await getFromS3(path)
-            }
+            data: await getFromS3(path)
         }
     } catch (err) {
         console.error(err);
