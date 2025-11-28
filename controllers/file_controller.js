@@ -1,13 +1,14 @@
 const {
-    uploadFile,
-    getFileUrl
+    uploadToS3,
+    getFromS3
 } = require('../helpers/file_functions')
+const fs = require('fs')
 
 
 const uploadFileFunc = async (req, res) => {
     try {
         const { file } = req.payload
-        const resp = await uploadFile(file, '/test')
+        const resp = await uploadToS3(file.filename, 'test', fs.readFileSync(file.path))
         return {
             success: true,
             data: resp
@@ -28,7 +29,7 @@ const getFile = async (req, res) => {
         return {
             success: true,
             data: {
-                ...await getFileUrl(path, 3600)
+                ...await getFromS3(path)
             }
         }
     } catch (err) {

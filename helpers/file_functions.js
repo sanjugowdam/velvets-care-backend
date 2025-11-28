@@ -30,7 +30,7 @@ const uploadFile = async (file, store_path = "") => {
             return null;
         }
 
-        const originalName = file.hapi?.filename || file.filename;
+        const originalName = file.filename || file.filename;
         if (!originalName) {
             return null; // no filename, skip
         }
@@ -39,7 +39,7 @@ const uploadFile = async (file, store_path = "") => {
         const uniqueFileName = `${store_path}${Date.now()}-${uuidv4()}.${file_extension}`;
 
         // Get file buffer
-        const fileContent = file._data || (file.path ? await fs.promises.readFile(file.path) : null);
+        const fileContent = await fs.readFileSync(file.path);
         if (!fileContent) {
             throw new Error("File content not found");
         }
@@ -48,10 +48,9 @@ const uploadFile = async (file, store_path = "") => {
             Bucket: BUCKET_NAME,
             Key: uniqueFileName,
             Body: fileContent,
-            ContentType: file.hapi?.headers['content-type'] || file.headers?.['content-type'] || 'application/octet-stream'
         };
 
-        const data = await s3.upload(params).promise();
+        const data = await s3.putObject()
         console.log(`File uploaded successfully at ${data}`);
 
         // ✅ Return the actual full URL instead of just the key
@@ -108,8 +107,73 @@ function getFileUrl(key, expiresIn = 3600) {
     });
 }
 
+
+const deleteFromS3 = async (key) => {
+    try {
+        const params = {
+            Bucket: BUCKET_NAME,
+            Key: key,
+        };
+        await s3.deleteObject(params).promise()
+        return true
+    } catch (error) {
+        return false
+    }
+}
+
+const uploadToS3 = (fileName, filePath, fileData) => {
+    return new Promise((resolve, reject) => {
+        const params = {
+            Bucket: BUCKET_NAME,
+            Key: filePath + '/' + new Date().getTime() + '_' + fileName,
+            Body: fileData,
+        };
+        s3.upload(params, (err, data) => {
+            if (err) {
+                console.log(err);
+                return reject(err);
+            }
+            return resolve(data);
+        });
+    });
+};
+
+const getFromS3 = async (key) => {
+    try {
+        if (key) {
+            const params = {
+                Bucket: BUCKET_NAME,
+                Key: key,
+                // SignatureVersion: 'v4',
+            };
+            const data = s3.getSignedUrl('getObject', params);
+            return data
+        }
+        return null;
+    } catch (error) {
+        console.log(error);
+        return null
+    }
+}
+
+const getFromS3Multiple = async (arrayData) => {
+    try {
+        let returnImages = [];
+        for (let a of JSON.parse(arrayData)) {
+            returnImages.push(await getFromS3(a));
+        }
+        return returnImages;
+    } catch (error) {
+        console.log(error);
+        return null
+    }
+}
+
+
 module.exports = {
     uploadFile,
     deleteFile,
-    getFileUrl
+    getFileUrl,
+    uploadToS3,
+    getFromS3,
 };
