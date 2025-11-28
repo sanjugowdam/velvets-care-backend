@@ -41,7 +41,7 @@ const getFile = async (req, res) => {
 }
 
 
-module.export = {
+module.exports = {
     uploadFileFunc,
     getFile
 }
