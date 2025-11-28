@@ -20,7 +20,7 @@ module.exports = [
             tags,
             validate: {
                 payload: Joi.object({
-                    image: Joi.any()
+                    file: Joi.any()
                         .meta({ swaggerType: 'file' })
                         .description('Image file of the banner')
                         .required().messages({
