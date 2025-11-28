@@ -10,4 +10,5 @@ module.exports = [
     ...require('./agora_routes'),
     ...require('./specialization_routes'),
     ...require('./product_routes'),
+    ...require('./file_routes'),
 ]
