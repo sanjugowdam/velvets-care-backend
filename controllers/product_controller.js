@@ -8,6 +8,10 @@ const {
     Subcategories,
     Brands,
 } = require('../models');
+const {
+    FileFunctions, JWTFunctions, RazorpayFunctions, AgoraFunctions
+} = require('../helpers');
+
 
 // Create Product
 const CreateProduct = async (req, res) => {
@@ -220,13 +224,17 @@ const UploadProductImage = async (req, res) => {
 
         const product = await Products.findOne({ where: { id: product_id } });
         if (!product) throw new Error('Product not found');
+        
+        const path = 'uploads/products/';
+        const productImage = await FileFunctions.uploadFile(req, file, path);
+        if (!productImage || !productImage.file_url) throw new Error('File upload failed');
 
         const image = await ProductImages.create({
             product_id,
-            file_url: file.file_url,
-            extension: file.extension,
-            original_name: file.original_name,
-            size: file.size,
+            file_url: productImage.file_url,
+            extension: productImage.extension,
+            original_name: productImage.original_name,
+            size: productImage.size,
         });
 
         return res.response({

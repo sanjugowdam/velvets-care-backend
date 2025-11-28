@@ -10,5 +10,14 @@ module.exports = {
     AppointmentController: require('./appointment_controller'),
     SpecializationController: require('./specilization_controller'),
     ProductController: require('./product_controller'),
+    CategoryController: require('./category_controller'),
+    SubcategoryController: require('./subcategory_controller'),
+    BrandController: require('./brand_controller'),
+    CartController: require('./cart_controller'),
+    WishlistController: require('./wishlist_controller'),
+    DiscountController: require('./discount_controller'),
+    DiscountedUserController: require('./discounteduser_controller'),
+    DiscountedProductController: require('./discountedproduct_controller'),
+    OrderController: require('./order_controller'),
     FileController: require('./file_controller')
 }

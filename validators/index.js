@@ -18,7 +18,15 @@ module.exports = {
     AppointmentValidator: require('./appointment_validator'),
     SpecializationValidator: require('./specilization_validator'),
     ProductValidator: require('./product_validator'),
-    // CategoryValidator: require('./category_validator'),
+    CategoryValidator: require('./category_validator'),
+    SubCategoryValidator: require('./subcategory_validator'),
+    BrandValidator: require('./brand_validator'),
+    CartValidator: require('./cart_validator'),
+    WishlistValidator: require('./wishlist_validator'),
+    DiscountValidator: require('./discount_validator'),
+    DiscountedUserValidator: require('./discounteduser_validator'),
+    DiscountedProductValidator: require('./discountedproduct_validator'),
+    OrderValidator: require('./order_validator'),
 
 
 }

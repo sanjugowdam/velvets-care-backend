@@ -78,10 +78,17 @@ const validate_discount_usage_validator = Joi.object({
     }),
 });
 
+const fetch_single_discount_validator = Joi.object({
+    id: Joi.number().required().messages({
+        'any.required': 'Discount ID is required',
+    }),
+});
+
 module.exports = {
     create_discount_validator,
     update_discount_validator,
     assign_discount_to_product_validator,
     assign_discount_to_user_validator,
-    validate_discount_usage_validator
+    validate_discount_usage_validator,
+    fetch_single_discount_validator
 };

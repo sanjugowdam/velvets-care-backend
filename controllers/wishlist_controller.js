@@ -1,5 +1,5 @@
 'use strict';
-const { Wishlist, Users } = require('../models');
+const { Wishlists, Users } = require('../models');
 const { sequelize } = require('../config');
 const { Op } = require('sequelize');
 
@@ -11,7 +11,7 @@ const AddToWishlist = async (req, res) => {
 
         const { product_id } = req.payload;
 
-        const existing = await Wishlist.findOne({
+        const existing = await Wishlists.findOne({
             where: { user_id: session_user.user_id, product_id }
         });
 
@@ -23,7 +23,7 @@ const AddToWishlist = async (req, res) => {
             });
         }
 
-        const wishlistItem = await Wishlist.create({
+        const wishlistItem = await Wishlists.create({
             user_id: session_user.user_id,
             product_id
         });
@@ -46,7 +46,7 @@ const RemoveFromWishlist = async (req, res) => {
         if (!session_user) throw new Error('Session expired');
 
         const { id } = req.params;
-        const wishlistItem = await Wishlist.findOne({ where: { id, user_id: session_user.user_id } });
+        const wishlistItem = await Wishlists.findOne({ where: { id, user_id: session_user.user_id } });
         if (!wishlistItem) throw new Error('Wishlist item not found');
 
         await wishlistItem.destroy();
@@ -67,13 +67,14 @@ const GetWishlist = async (req, res) => {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
 
-        const wishlistItems = await Wishlist.findAll({
+        const wishlistItems = await Wishlists.findAll({
             where: { user_id: session_user.user_id }
         });
 
         return res.response({
             success: true,
-            data: wishlistItems
+            data: wishlistItems,
+            message: 'Wishlist fetched successfully'
         });
     } catch (error) {
         console.error('Error fetching wishlist:', error);
@@ -84,7 +85,9 @@ const GetWishlist = async (req, res) => {
 // Admin: Get wishlist count per user
 const AdminWishlistStats = async (req, res) => {
     try {
-        const wishlistStats = await Wishlist.findAll({
+        const session_user = req.headers.user;
+        if (!session_user || !session_user.is_admin) throw new Error('Unauthorized');
+        const wishlistStats = await Wishlists.findAll({
             attributes: [
                 'user_id',
                 [sequelize.fn('COUNT', sequelize.col('product_id')), 'wishlist_count']

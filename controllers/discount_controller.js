@@ -1,9 +1,9 @@
 'use strict';
 const { Op } = require('sequelize');
 const {
-    Discount,
-    DiscountedProduct,
-    DiscountedUser,
+    Discounts: Discount,
+    DiscountedProducts: DiscountedProduct,
+    DiscountedUsers: DiscountedUser,
     Products,
     Users
 } = require('../models');

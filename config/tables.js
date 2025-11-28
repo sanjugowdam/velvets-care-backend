@@ -23,5 +23,8 @@ module.exports = {
     DiscountedProducts: 'discountedproducts',
     Subcategories: 'subcategories',
     ProductImages: 'product_images',
+    Orders: 'orders',
+    OrderItems: 'order_items',
+    Payments: 'payments',
 
 }

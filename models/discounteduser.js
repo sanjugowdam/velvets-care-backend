@@ -11,6 +11,10 @@ const{
   sequelize
 } = require('../config');
 
+const Discount = require('./discount');
+
+const User = require('./users');
+
   class DiscountedUser extends Model {
   }
   DiscountedUser.init({
@@ -22,4 +26,11 @@ const{
     paranoid: true,
     modelName: DiscountedUsers,
   });
+
+  DiscountedUser.belongsTo(Discount, { foreignKey: 'discount_id' });
+  Discount.hasMany(DiscountedUser, { foreignKey: 'discount_id' });
+
+  DiscountedUser.belongsTo(User, { foreignKey: 'user_id' });
+  User.hasMany(DiscountedUser, { foreignKey: 'user_id' });
+  
 module.exports = DiscountedUser;

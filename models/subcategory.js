@@ -11,6 +11,8 @@ const{
   sequelize
 } = require('../config');
 
+const Category = require('./category');
+
 class SubCategory extends Model {
 }
 SubCategory.init({
@@ -23,4 +25,8 @@ SubCategory.init({
     paranoid: true,
     modelName: Subcategories,
   });
+
+  SubCategory.belongsTo(Category, { foreignKey: 'category_id' });
+  Category.hasMany(SubCategory, { foreignKey: 'category_id' });
+
 module.exports = SubCategory;

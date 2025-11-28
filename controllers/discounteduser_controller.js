@@ -1,5 +1,5 @@
 'use strict';
-const { DiscountedUser, Users, Discount } = require('../models');
+const { DiscountedUsers: DiscountedUser, Users, Discounts: Discount } = require('../models');
 
 // Assign Discount to User
 const CreateDiscountedUser = async (req, res) => {

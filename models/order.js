@@ -1,17 +1,17 @@
 'use strict';
 const {
-  Model
+  Model,
+  DataTypes
 } = require('sequelize');
-module.exports = (sequelize, DataTypes) => {
+const {
+ tables: {
+    Orders
+  },
+  sequelize
+} = require('../config');
+  
+
   class Order extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
-    static associate(models) {
-      // define association here
-    }
   }
   Order.init({
     user_id: DataTypes.INTEGER,
@@ -22,7 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     notes: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'Order',
+    paranoid: true,
+    modelName: Orders,
   });
-  return Order;
-};
+
+module.exports = Order;

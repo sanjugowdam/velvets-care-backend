@@ -1,34 +1,18 @@
 'use strict';
-const {
-  tables: {
-    ProductImages
-  },
-  sequelize
-} = require('../config');
-
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable(ProductImages, {
+    await queryInterface.createTable('Banners', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      product_id: {
-        type: Sequelize.INTEGER
+      banner_id: {
+        type: Sequelize.UUID
       },
-      file_url: {
-        type: Sequelize.STRING
-      },
-      extension: {
-        type: Sequelize.STRING
-      },
-      original_name: {
-        type: Sequelize.STRING
-      },
-      size: {
+      link: {
         type: Sequelize.STRING
       },
       createdAt: {
@@ -38,13 +22,10 @@ module.exports = {
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
-      },
-      deletedAt: {
-        type: Sequelize.DATE
       }
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable(ProductImages);
+    await queryInterface.dropTable('Banners');
   }
 };

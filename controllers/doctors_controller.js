@@ -3,10 +3,13 @@ const {
     Doctorsavailability,
     Adresses,
     Otps,
-    Files
+    Files,
+    Appointments
 } = require('../models')
 const {
     Op,
+    fn,
+    col,
     where
 } = require('sequelize')
 const {
@@ -441,6 +444,246 @@ const fetch_single_doctor = async (req, h) => {
         }).code(200);
     }
 }
+
+const fetch_popular_doctors = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+
+        // Count how many completed appointments each doctor has
+        const popularDoctors = await Appointments.findAll({
+            where: { status: 'completed' },
+            attributes: [
+                'doctor_id',
+                [fn('COUNT', col('doctor_id')), 'completed_count']
+            ],
+            group: ['doctor_id'],
+            order: [[fn('COUNT', col('doctor_id')), 'DESC']],
+            limit: 10, // top 10 doctors
+            raw: true
+        });
+
+        if (!popularDoctors.length) {
+            return h.response({
+                success: true,
+                message: 'No popular doctors found',
+                data: []
+            }).code(200);
+        }
+
+        // Extract doctor IDs
+        const doctorIds = popularDoctors.map(d => d.doctor_id);
+
+        // Fetch doctor details
+        const doctors = await Doctors.findAll({
+            where: { id: { [Op.in]: doctorIds } },
+            include: [
+                {
+                    model: Files,
+                    as: 'profile_image',
+                },
+
+            ],
+            raw: true,
+            nest: true
+        });
+
+        // Merge appointment counts with doctor details
+        const merged = doctors.map(doc => {
+            const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
+            return { ...doc, completed_appointments: count };
+        });
+
+        return h.response({
+            success: true,
+            message: 'Popular doctors fetched successfully',
+            data: merged
+        }).code(200);
+
+    } catch (err) {
+        console.error('Error fetching popular doctors:', err);
+        return h.response({
+            success: false,
+            message: err.message
+        }).code(400);
+    }
+};
+
+const updateDoctoreDetailsByAdmin = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const { doctor_id } = req.params;
+        const {
+            full_name, gender, date_of_birth, phone, email,
+            specialization, years_of_experience, registration_number,
+            registration_certificate, medical_degree_certificate,
+            consultation_fee, consultation_modes, languages_spoken, profile_image, government_id, pan_card
+        } = req.payload;
+        
+        const doctor = await Doctors.findOne({
+            where: { id: doctor_id }
+        });
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+
+        if (profile_image) {
+            const uploadedfile = await FileFunctions.uploadFile(req, profile_image, 'uploads/profile_images/');
+            const profileFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            profileFileId = profileFile.id;
+        }
+
+        if (government_id) {
+            const uploadedfile = await FileFunctions.uploadFile(req, government_id, 'uploads/government_ids/');
+            const govFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            govFileId = govFile.id;
+        }
+
+        if (pan_card) {
+            const uploadedfile = await FileFunctions.uploadFile(req, pan_card, 'uploads/pan_cards/');
+            const panFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            panFileId = panFile.id;
+        }
+
+        if (registration_certificate) {
+            const uploadedfile = await FileFunctions.uploadFile(req, registration_certificate, 'uploads/registration_certificates/');
+            const regFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            regCertFileId = regFile.id;
+        }
+
+        if (medical_degree_certificate) {
+            const uploadedfile = await FileFunctions.uploadFile(req, medical_degree_certificate, 'uploads/medical_degree_certificates/');
+            const degreeFile = await Files.create({
+                file_url: uploadedfile.file_url,
+                extension: uploadedfile.extension,
+                original_name: uploadedfile.original_name,
+                size: uploadedfile.size
+            });
+            degreeCertFileId = degreeFile.id;
+        }
+
+    
+        await Doctors.update({
+              full_name,
+            gender,
+            date_of_birth,
+            phone,
+            email,
+            specialization,
+            years_of_experience,
+            registration_number,
+            registration_certificate_id: regCertFileId,
+            medical_degree_certificate_id: degreeCertFileId,
+            consultation_fee,
+            consultation_modes: JSON.stringify(consultation_modes),
+            languages_spoken: JSON.stringify(languages_spoken),
+            profile_image_id: profileFileId,
+            government_id: govFileId,
+            pan_card_id: panFileId
+        }, {
+            where: {
+                id: doctor_id
+            }
+        });
+
+        return h.response({
+            success: true,
+            message: 'Doctor details updated successfully',
+            data: doctor
+        }).code(200);
+    } catch (err) {
+        console.error(err);
+        return h.response({
+            success: false,
+            message: err.message
+        });
+    }
+};
+
+const deleteDoctor = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const { doctor_id } = req.params;
+        const doctor = await Doctors.findOne({
+            where: { id: doctor_id }
+        });
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+        await doctor.destroy();
+        return h.response({
+            success: true,
+            message: 'Doctor deleted successfully',
+            data: doctor
+        }).code(200);
+    
+    } catch (err) {
+        console.error(err);
+        return h.response({
+            success: false,
+            message: err.message
+        });
+    }
+};
+
+const CheckDoctorSlotsByAdmin = async (req, h) => {
+  try {
+      const session_user = req.headers.user;
+      if (!session_user) {
+          throw new Error('Session expired');
+      }
+      const { doctor_id } = req.params;
+      const doctor = await Doctorsavailability.findOne({
+          where: { id: doctor_id }
+      });
+      if (!doctor) {
+          throw new Error('Doctor not found');
+      }
+      const slots = await Doctorsavailability.findAll({
+          where: { doctor_id }
+      });
+      return h.response({
+          success: true,
+          data: slots
+      }).code(200);
+  } catch (error) {
+      console.error(error);
+      return h.response({
+          success: false,
+          message: error.message
+      });
+    
+  }
+}
+
 module.exports = {
     updateBasicDetails,
     updateAddress,
@@ -449,6 +692,10 @@ module.exports = {
     doctorlist_user,
     doctorlist,
     fetch_single_doctor,
+    fetch_popular_doctors,
+    updateDoctoreDetailsByAdmin,
+    deleteDoctor,
+    CheckDoctorSlotsByAdmin
 }
 
 

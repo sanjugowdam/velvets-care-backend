@@ -1,5 +1,5 @@
 'use strict';
-const { Cart, Users } = require('../models');
+const { Carts: Cart, Users } = require('../models');
 const { sequelize } = require('../config');
 
 // Add product to cart

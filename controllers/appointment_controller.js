@@ -13,7 +13,12 @@ const {
 const {
     FileFunctions, JWTFunctions, RazorpayFunctions, AgoraFunctions
 } = require('../helpers');
-
+const Razorpay = require('razorpay');
+require('dotenv/config');
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_SECRET
+});
 
 
 const precheckAndCreateOrder = async (req, res) => {
@@ -208,14 +213,51 @@ const DoctorApproval = async (req, h) => {
             throw new Error(`Only pending appointments can be approved. Current status: ${appointment.status}`);
         }
         // Update status to approved
-        await Appointments.update({
+       const updatedAppointment = await Appointments.update({
             status: 'approved'
-        }
-            , { where: { id: appointmentId } });
+        }, { where: { id: appointmentId } });
 
         return h.response({
             success: true,
             message: 'Appointment approved successfully',
+            data: updatedAppointment
+        });
+    } catch (error) {
+        console.error(error);
+        return h.response({
+            success: false,
+            message: error.message
+        }).code(200);
+    }
+};
+
+const UpdateAppointmentStatus = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
+
+        const doctor_id = session_user.doctor_id;
+       const {appointmentId} = req.params;
+        const { status } = req.payload;
+
+        const appointment = await Appointments.findByPk(appointmentId);
+        if (!appointment) {
+            throw new Error('Appointment not found');
+        }
+        if (appointment.doctor_id !== doctor_id) {
+            throw new Error('Unauthorized: This is not your appointment');
+        }
+        if (appointment.status !== 'approved') {
+            throw new Error(`Only approved appointments can have status updated. Current status: ${appointment.status}`);
+        }
+        if (!['completed', 'no_show'].includes(status)) {
+            throw new Error('Invalid status. Allowed values are: completed, no_show');
+        }
+        // Update status
+        await appointment.update({ status });
+        return h.response({
+            success: true,
+            message: 'Appointment status updated successfully',
             data: appointment
         });
     } catch (error) {
@@ -367,7 +409,7 @@ const getadminAppointments = async (req, res) => {
             where: filter,
             limit: limit,
             offset: (page - 1) * limit,
-            order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
+            order: [['appointment_date', 'DESC'], ['appointment_time', 'DESC']],
             include: [{
                 model: Users,
                 attributes: ['id', 'name', 'email', 'phone']
@@ -700,6 +742,294 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
     }
 };
 
+
+const adminCheckDoctorSlot = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user || session_user.role !== 'ADMIN') throw new Error('Unauthorized access');
+
+        const { doctor_id, appointment_date, appointment_time } = req.payload;
+        if (!doctor_id || !appointment_date || !appointment_time)
+            throw new Error('doctor_id, appointment_date and appointment_time are required');
+
+        if (new Date(appointment_date) < new Date())
+            throw new Error('Booking for past date is not allowed');
+
+        const doctor = await Doctors.findByPk(doctor_id);
+        if (!doctor) throw new Error('Invalid doctor');
+
+        // Convert date to day of week
+        const appointmentDay = new Date(appointment_date).toLocaleDateString('en-IN', { weekday: 'long' });
+        const ampm = appointment_time.includes('AM') ? 'AM' : 'PM';
+        const timeValue = parseInt(appointment_time.split(' ')[0].replace(':', ''));
+
+        const availability = await Doctorsavailability.findOne({ where: { doctor_id, day: appointmentDay } });
+        if (!availability) throw new Error('Doctor is not available on this day');
+
+        const start = parseInt(availability.start_time.replace(':', ''));
+        const end = parseInt(availability.end_time.replace(':', ''));
+        const startAMPM = availability.start_time.includes('AM') ? 'AM' : 'PM';
+        const endAMPM = availability.end_time.includes('AM') ? 'AM' : 'PM';
+
+        const outsideWindow =
+            (ampm === startAMPM && timeValue < start) ||
+            (ampm === endAMPM && timeValue > end);
+
+        if (outsideWindow) throw new Error('Doctor is not available at this time');
+
+        // Check if booked
+        const booked = await Appointments.findOne({ where: { doctor_id, appointment_date, appointment_time } });
+        if (booked) throw new Error('Slot already booked');
+
+        return res.response({
+            success: true,
+            message: 'Doctor is available for this slot'
+        }).code(200);
+
+    } catch (err) {
+        console.error(err);
+        return res.response({
+            success: false,
+            message: err.message
+        }).code(200);
+    }
+};
+
+const adminGetDoctorAvailableSlots = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user || session_user.role !== 'ADMIN') throw new Error('Unauthorized access');
+
+        const { doctor_id, appointment_date } = req.payload;
+        if (!doctor_id || !appointment_date)
+            throw new Error('doctor_id and appointment_date are required');
+
+        const doctor = await Doctors.findByPk(doctor_id);
+        if (!doctor) throw new Error('Invalid doctor');
+
+        const dateObj = new Date(appointment_date);
+        if (dateObj < new Date()) throw new Error('Past date not allowed');
+
+        const day = dateObj.toLocaleDateString('en-IN', { weekday: 'long' });
+
+        const availability = await Doctorsavailability.findOne({ where: { doctor_id, day } });
+        if (!availability) throw new Error('Doctor is not available on this day');
+
+        // Convert time to date object
+        const toDate = (timeStr) => {
+            const [time, mod] = timeStr.split(' ');
+            let [h, m] = time.split(':').map(Number);
+            if (mod === 'PM' && h !== 12) h += 12;
+            if (mod === 'AM' && h === 12) h = 0;
+            const d = new Date(dateObj);
+            d.setHours(h, m, 0, 0);
+            return d;
+        };
+
+        const start = toDate(availability.start_time);
+        const end = toDate(availability.end_time);
+
+        // Booked slots
+        const booked = await Appointments.findAll({
+            where: { doctor_id, appointment_date },
+            raw: true
+        });
+        const bookedTimes = new Set(booked.map(b => b.appointment_time));
+
+        // Generate slots
+        const slots = [];
+        let current = new Date(start);
+        while (current < end) {
+            const next = new Date(current.getTime() + 30 * 60000);
+            const startStr = current.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const endStr = next.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const formattedStart = startStr.replace(' ', ' '); // remove weird spacing
+
+            slots.push({
+                start: formattedStart,
+                end: endStr.replace(' ', ' '),
+                is_available: !bookedTimes.has(formattedStart)
+            });
+
+            current = next;
+        }
+
+        return res.response({
+            success: true,
+            date: appointment_date,
+            day,
+            start_time: availability.start_time,
+            end_time: availability.end_time,
+            slots
+        }).code(200);
+
+    } catch (err) {
+        console.error(err);
+        return res.response({
+            success: false,
+            message: err.message
+        }).code(200);
+    }
+};
+
+const adminGetTodaysAppointments = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user || session_user.role !== 'ADMIN') throw new Error('Unauthorized access');
+
+        const { doctor_id } = req.params;
+        if (!doctor_id) throw new Error('doctor_id is required');
+
+        const doctor = await Doctors.findByPk(doctor_id);
+        if (!doctor) throw new Error('Invalid doctor');
+
+        const today = new Date();
+        const formattedToday = `${(today.getMonth() + 1)
+            .toString()
+            .padStart(2, '0')}-${today
+            .getDate()
+            .toString()
+            .padStart(2, '0')}-${today.getFullYear()}`;
+
+        const appointments = await Appointments.findAll({
+            where: { doctor_id, appointment_date: formattedToday },
+            include: [
+                {
+                    model: Users,
+                    attributes: { exclude: ['access_token', 'refresh_token', 'otp_id'] },
+                    include: [{ model: Files }]
+                }
+            ]
+        });
+
+        return res.response({
+            success: true,
+            message: 'Today’s appointments fetched successfully',
+            data: appointments
+        }).code(200);
+
+    } catch (err) {
+        console.error(err);
+        return res.response({
+            success: false,
+            message: err.message
+        }).code(200);
+    }
+};
+
+// doctor create appointment and generate payment link in razorpay
+const adminCreateAppointmentWithPaymentLink = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+
+        // 1️⃣ Admin authentication
+        if (!session_user || session_user.role !== 'ADMIN')
+            throw new Error('Unauthorized access');
+
+        const {
+            doctor_id,
+            patient_id,
+            appointment_date,
+            appointment_time,
+            reason,
+            consultation_fee,
+            consultation_modes
+        } = req.payload;
+
+        // 2️⃣ Validate doctor & patient
+        const doctor = await Doctors.findByPk(doctor_id);
+        const patient = await Users.findByPk(patient_id);
+        if (!doctor || !patient) throw new Error('Invalid doctor or patient');
+
+        // 3️⃣ Check if appointment date is valid (future date)
+        const appointmentDateObj = new Date(appointment_date);
+        appointmentDateObj.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (appointmentDateObj < today) throw new Error('Cannot book appointment in the past');
+
+        // 4️⃣ Check if slot is already booked
+        const existing = await Appointments.findOne({
+            where: { doctor_id, appointment_date, appointment_time }
+        });
+        if (existing) throw new Error('Slot already booked for this time');
+
+        // 5️⃣ Check doctor availability for that day
+        const appointmentDay = appointmentDateObj.toLocaleDateString('en-IN', { weekday: 'long' });
+        const availability = await Doctorsavailability.findOne({
+            where: { doctor_id, day: appointmentDay }
+        });
+        if (!availability) throw new Error('Doctor is not available on this day');
+
+        // 6️⃣ Check if requested time is within doctor's available time
+        const [hours, minutes] = appointment_time.split(/[: ]/).map(v => parseInt(v));
+        const isPM = appointment_time.includes('PM');
+        let requestedTime = hours % 12 + (isPM ? 12 : 0); // 24h format
+
+        const [startH, startM] = availability.start_time.split(/[: ]/).map(v => parseInt(v));
+        const startPM = availability.start_time.includes('PM');
+        const startTime = startH % 12 + (startPM ? 12 : 0) + startM / 60;
+
+        const [endH, endM] = availability.end_time.split(/[: ]/).map(v => parseInt(v));
+        const endPM = availability.end_time.includes('PM');
+        const endTime = endH % 12 + (endPM ? 12 : 0) + endM / 60;
+
+        const reqTime = requestedTime + minutes / 60;
+        if (reqTime < startTime || reqTime >= endTime) throw new Error('Doctor is not available at this time');
+
+        // 7️⃣ Create Razorpay Payment Link
+        const amount = consultation_fee || doctor.consultation_fee || 500;
+        const paymentLink = await razorpay.paymentLink.create({
+            amount: amount * 100, // in paise
+            currency: 'INR',
+            accept_partial: false,
+            description: `Consultation with Dr. ${doctor.name} on ${appointment_date} at ${appointment_time}`,
+            customer: {
+                name: patient.name,
+                email: patient.email,
+                contact: patient.phone
+            },
+            notify: { sms: true, email: true },
+            reminder_enable: true,
+            callback_url: `${process.env.FRONTEND_URL}/payment/callback`,
+            callback_method: 'get'
+        });
+
+        // 8️⃣ Create appointment record (pending payment)
+        const appointment = await Appointments.create({
+            doctor_id,
+            patient_id,
+            appointment_date,
+            appointment_time,
+            reason,
+            status: 'pending',          // pending until payment
+            payment_id: null,
+            order_id: paymentLink.id,
+            payment_signature: null,
+            payment_status: 'pending',
+            consultation_fee: amount,
+            consultation_modes
+        });
+
+        // 9️⃣ Return appointment + payment link
+        return res.response({
+            success: true,
+            message: 'Appointment created successfully. Share the payment link with the user.',
+            data: {
+                appointment,
+                payment_link: paymentLink.short_url
+            }
+        }).code(200);
+
+    } catch (err) {
+        console.error(err);
+        return res.response({
+            success: false,
+            message: err.message
+        }).code(200);
+    }
+};
+
 module.exports = {
     precheckAndCreateOrder,
     confirmAppointment,
@@ -713,6 +1043,12 @@ module.exports = {
     checkDoctorAvailability,
     getDoctorAvailableTimeSlots,
     getTodaysAppointmentsDoctor,
+    UpdateAppointmentStatus,
+    adminGetTodaysAppointments,
+    adminCheckDoctorSlot,
+    adminCreateAppointmentWithPaymentLink,
+    adminGetDoctorAvailableSlots
+
 }
 
 
