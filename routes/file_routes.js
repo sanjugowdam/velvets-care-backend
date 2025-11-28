@@ -14,7 +14,7 @@ const tags = ["api", "File"];
 module.exports = [
     {
         method: 'POST',
-        path: '/file/upload',
+        path: '/file/upload-test',
         options: {
             description: 'Upload file',
             tags,
@@ -50,7 +50,7 @@ module.exports = [
     },
     {
         method: 'POST',
-        path: '/file',
+        path: '/file-test',
         options: {
             description: 'Get file',
             tags,
