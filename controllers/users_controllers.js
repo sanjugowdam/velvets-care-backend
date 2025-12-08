@@ -71,7 +71,10 @@ const request_otp_register = async (req, res) => {
         const otp = await OTPFunctions.getOTPByLength(4);
         console.log("register otp:", otp);
         if (user) {
-            throw new Error('User already exists');
+           return res.response({
+                success: false,
+                message: 'User already exists',
+            });
         }
         const otpCode = await Otps.create({
             otp: otp,

@@ -15,6 +15,7 @@ const {
 const {
     OTPFunctions, JWTFunctions
 } = require('../helpers')
+const fs = require('fs')
 
 const { TwilioFunctions, FileFunctions } = require('../helpers');
 const { ComplianceInquiriesContextImpl } = require('twilio/lib/rest/trusthub/v1/complianceInquiries');
@@ -23,6 +24,7 @@ const { off } = require('../config/mailer');
 
 const updateBasicDetails = async (req, h) => {
     try {
+         const transaction = await sequelize.transaction();
         const session_user = req.headers.user;
         if (!session_user) {
             throw new Error('Session expired');
@@ -54,57 +56,57 @@ const updateBasicDetails = async (req, h) => {
         let panFileId = null;
 
         if (profile_image) {
-            const uploadedfile = await FileFunctions.uploadFile(req, profile_image, 'uploads/profile_images/');
+            const uploadedfile = await FileFunctions.uploadToS3(profile_image.filename,  'uploads/profile_images', fs.readFileSync(profile_image.path));
             const profileFile = await Files.create({
-                file_url: uploadedfile.file_url,
-                extension: uploadedfile.extension,
-                original_name: uploadedfile.original_name,
-                size: uploadedfile.size
-            });
+                file_url: uploadedfile.key,
+                extension: uploadedfile.key.split('.').pop(),
+                original_name: uploadedfile.key,
+                size: fs.statSync(profile_image.path).size
+            }, { transaction });
             profileFileId = profileFile.id;
         }
 
         if (government_id) {
-            const uploadedfile = await FileFunctions.uploadFile(req, government_id, 'uploads/government_ids/');
+            const uploadedfile = await FileFunctions.uploadToS3(government_id.filename,  'uploads/government_ids', fs.readFileSync(government_id.path));
             const govFile = await Files.create({
-                file_url: uploadedfile.file_url,
-                extension: uploadedfile.extension,
-                original_name: uploadedfile.original_name,
-                size: uploadedfile.size
-            });
+                file_url: uploadedfile.key,
+                extension: uploadedfile.key.split('.').pop(),
+                original_name: uploadedfile.key,
+                size: fs.statSync(government_id.path).size
+            }, { transaction });
             govFileId = govFile.id;
         }
 
         if (pan_card) {
-            const uploadedfile = await FileFunctions.uploadFile(req, pan_card, 'uploads/pan_cards/');
+            const uploadedfile = await FileFunctions.uploadToS3(pan_card.filename,  'uploads/pan_cards', fs.readFileSync(pan_card.path));
             const panFile = await Files.create({
-                file_url: uploadedfile.file_url,
-                extension: uploadedfile.extension,
-                original_name: uploadedfile.original_name,
-                size: uploadedfile.size
-            });
+                file_url: uploadedfile.key,
+                extension: uploadedfile.key.split('.').pop(),
+                original_name: uploadedfile.key,
+                size: fs.statSync(pan_card.path).size
+            }, { transaction });
             panFileId = panFile.id;
         }
 
         if (registration_certificate) {
-            const uploadedfile = await FileFunctions.uploadFile(req, registration_certificate, 'uploads/registration_certificates/');
+            const uploadedfile = await FileFunctions.uploadToS3(registration_certificate.filename,  'uploads/registration_certificates', fs.readFileSync(registration_certificate.path));
             const regFile = await Files.create({
-                file_url: uploadedfile.file_url,
-                extension: uploadedfile.extension,
-                original_name: uploadedfile.original_name,
-                size: uploadedfile.size
-            });
+                file_url: uploadedfile.key,
+                extension: uploadedfile.key.split('.').pop(),
+                original_name: uploadedfile.key,
+                size: fs.statSync(registration_certificate.path).size
+            }, { transaction });
             regCertFileId = regFile.id;
         }
 
         if (medical_degree_certificate) {
-            const uploadedfile = await FileFunctions.uploadFile(req, medical_degree_certificate, 'uploads/medical_degree_certificates/');
+            const uploadedfile = await FileFunctions.uploadToS3(medical_degree_certificate.filename,  'uploads/medical_degree_certificates', fs.readFileSync(medical_degree_certificate.path));
             const degreeFile = await Files.create({
-                file_url: uploadedfile.file_url,
-                extension: uploadedfile.extension,
-                original_name: uploadedfile.original_name,
-                size: uploadedfile.size
-            });
+                file_url: uploadedfile.key,
+                extension: uploadedfile.key.split('.').pop(),
+                original_name: uploadedfile.key,
+                size: fs.statSync(medical_degree_certificate.path).size
+            }, { transaction });
             degreeCertFileId = degreeFile.id;
         }
 
@@ -126,13 +128,15 @@ const updateBasicDetails = async (req, h) => {
             government_id: govFileId,
             pan_card_id: panFileId
         });
-
+        await transaction.commit();
         return h.response({
             success: true,
             message: 'Basic details updated successfully',
             data: doctor
         }).code(201);
+        
     } catch (err) {
+        await transaction.rollback();
         console.error(err);
         return h.response({ success: false, message: 'Error updating basic details' }).code(500);
     }
@@ -321,12 +325,37 @@ const doctorlist_user = async (req, h) => {
             ],
             where: {
                 verified: true
-            }
+            },
+            raw: true,
+            nest: true,
+            mapToModel: true
         });
+      const data = doctors.map(async (doc) => ({
+            profile_image: doc.profile_image?.files_url
+                ? await FileFunctions.getFromS3(doc.profile_image.files_url)
+                : null,
+
+            government_id: doc.government_id_file?.files_url
+                ? await FileFunctions.getFromS3(doc.government_id_file.files_url)
+                : null,
+
+            pan_card: doc.pan_card_file?.files_url
+                ? await FileFunctions.getFromS3(doc.pan_card_file.files_url)
+                : null,
+
+            registration_certificate: doc.registration_certificate_file?.files_url
+                ? await FileFunctions.getFromS3(doc.registration_certificate_file.files_url)
+                : null,
+
+            medical_degree_certificate: doc.medical_degree_certificate_file?.files_url
+                ? await FileFunctions.getFromS3(doc.medical_degree_certificate_file.files_url)
+                : null
+        }));
+
         return h.response({
             success: true,
             message: 'Doctor list fetched successfully',
-            data: doctor
+            data: await Promise.all(data)
         }).code(200);
     } catch (err) {
         console.error(err);
