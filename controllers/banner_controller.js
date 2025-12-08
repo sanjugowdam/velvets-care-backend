@@ -71,7 +71,7 @@ const get_banner_users = async (req, res) => {
             return {
                 id: banner_item.id,
                 title: banner_item.title,
-                image: banner_item.File?.files_url ? FileFunctions.getFromS3(banner_item.File.files_url) : null
+                image: banner_item.file?.files_url ? FileFunctions.getFromS3(banner_item.file.files_url) : null
             }
         })
         console.log(banner_mapped, "mapped banners");   
