@@ -236,53 +236,79 @@ const doctor_logout = async (req, res) => {
 const doctor_update_profile = async (req, res) => {
     try {
         const session_doctor = req.headers.user;
-        if (!session_doctor) {
-            throw new Error('Session expired');
-        }
+        if (!session_doctor) throw new Error('Session expired');
 
         const { full_name, phone, email, gender, profile_image, dob } = req.payload;
+
         const doctor = await Doctors.findOne({ where: { id: session_doctor.doctor_id } });
-        if (!doctor) {
-            throw new Error('Doctor not found');
+        if (!doctor) throw new Error('Doctor not found');
+
+        let profileFileId = doctor.profile_image_id;
+
+        if (profile_image) {
+            // Upload to S3
+            const uploadedFile = await FileFunctions.uploadToS3(
+                profile_image.filename,
+                'uploads/profiles',
+                fs.readFileSync(profile_image.path)
+            );
+
+            // Save file record in DB
+            const fileRecord = await Files.create({
+                file_url: uploadedFile.key,
+                extension: uploadedFile.key.split('.').pop(),
+                original_name: uploadedFile.key,
+                size: fs.statSync(profile_image.path).size
+            });
+
+            profileFileId = fileRecord.id;
         }
 
-        const storePath = await FileFunctions.uploadFile(req, profile_image, 'uploads/profiles/');
-        const uploadedImage = await FileFunctions.uploadFile(req, profile_image, storePath);
+        // Update doctor record
+        await Doctors.update({
+            full_name,
+            phone,
+            gender,
+            dob,
+            email,
+            profile_image_id: profileFileId
+        }, { where: { id: session_doctor.doctor_id } });
 
-        const uploaded_files = await Files.create({
-            file_url: uploadedImage.file_url,
-            extension: uploadedImage.extension,
-            original_name: uploadedImage.original_name,
-            size: uploadedImage.size
+        // Refetch updated doctor with profile image
+        const updatedDoctor = await Doctors.findOne({
+            where: { id: session_doctor.doctor_id },
+            include: [{
+                model: Files,
+                as: 'profile_image',
+                attributes: ['files_url', 'original_name'],
+                required: false
+            }],
+            raw: true,
+            nest: true
         });
 
-        await Doctor.update({
-            full_name: full_name,
-            phone: phone,
-            gender: gender,
-            dob: dob,
-            email: email,
-            profile_image_id: uploaded_files.id,
-        }, {
-            where: {
-                id: session_doctor.doctor_id
-            }
-        });
+        // Map profile image to S3 URL
+        const doctor_data = {
+            ...updatedDoctor,
+            profile_image: updatedDoctor.profile_image?.files_url
+                ? await FileFunctions.getFromS3(updatedDoctor.profile_image.files_url)
+                : null
+        };
 
         return res.response({
             success: true,
             message: 'Doctor profile updated successfully',
+            data: doctor_data
         }).code(200);
 
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.response({
             success: false,
-            message: error.message,
-        }).code(200);
+            message: error.message
+        }).code(500);
     }
 };
-
 const doctor_refresh_token = async (req, res) => {
     try {
         const { refresh_token } = req.headers;
@@ -336,40 +362,48 @@ const doctor_refresh_token = async (req, res) => {
 const getDoctorProfile = async (req, res) => {
     try {
         const session_doctor = req.headers.user;
-        if (!session_doctor) {
-            throw new Error('Session expired');
-        }
+        if (!session_doctor) throw new Error('Session expired');
 
         const doctor = await Doctors.findOne({
             where: { id: session_doctor.doctor_id },
             attributes: ['id', 'full_name', 'phone', 'email', 'gender', 'profile_image_id'],
-            include: [{
-                model: Files,
-                as: 'profile_image',
-                attributes: ['files_url', 'original_name']
-            },
-            {
-                model: Doctorsavailability,
-                attributes: ['id', 'day', 'start_time', 'end_time']
-            },
-            {
-                model: Adresses,
-            },
-                // {
-                //     model: Specialization,
-                //     attributes: ['id', 'name']
-                // }
+            include: [
+                {
+                    model: Files,
+                    as: 'profile_image',
+                    attributes: ['files_url', 'original_name'],
+                    required: false
+                },
+                {
+                    model: Doctorsavailability,
+                    attributes: ['id', 'day', 'start_time', 'end_time'],
+                    required: false
+                },
+                {
+                    model: Adresses,
+                    required: false
+                }
             ],
-            raw: true
+            raw: true,
+            nest: true
         });
-        if (!doctor) {
-            throw new Error('Doctor not found');
-        }
+
+        if (!doctor) throw new Error('Doctor not found');
+
+        // Map profile_image to S3 URL
+        const doctor_profile = {
+            ...doctor,
+            profile_image: doctor.profile_image?.files_url
+                ? await FileFunctions.getFromS3(doctor.profile_image.files_url)
+                : null
+        };
+
         return res.response({
             success: true,
             message: 'Doctor profile fetched successfully',
-            data: doctor
+            data: doctor_profile
         }).code(200);
+
     } catch (error) {
         console.error(error);
         return res.response({

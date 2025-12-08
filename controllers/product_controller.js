@@ -115,30 +115,38 @@ const DeleteProduct = async (req, res) => {
 
 // Get Product By ID (Admin + User)
 const GetProductById = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        const product = await Products.findOne({
-            where: { id },
-            include: [
-                { model: ProductImages },
-                { model: Brands },
-                { model: Categories },
-                { model: Subcategories },
-            ],
-        });
+    const product = await Products.findOne({
+      where: { id },
+      include: [
+        { model: ProductImages },
+        { model: Brands },
+        { model: Categories },
+        { model: Subcategories },
+      ],
+    });
 
-        if (!product) throw new Error('Product not found');
+    if (!product) throw new Error('Product not found');
 
-        return res.response({
-            success: true,
-            data: product,
-        });
-    } catch (error) {
-        console.error('Error fetching product by id:', error);
-        return res.response({ success: false, message: error.message });
-    }
+    const productJSON = product.toJSON();
+
+    // Map S3 URLs for images
+    productJSON.ProductImages = await Promise.all(
+      productJSON.ProductImages.map(async (img) => ({
+        ...img,
+        file_url: img.file_url ? await FileFunctions.getFromS3(img.file_url) : null,
+      }))
+    );
+
+    return res.response({ success: true, data: productJSON });
+  } catch (error) {
+    console.error('Error fetching product by id:', error);
+    return res.response({ success: false, message: error.message });
+  }
 };
+
 
 // Admin Fetch Products (with page, limit, search)
 const AdminProducts = async (req, res) => {
@@ -216,37 +224,34 @@ const UserProducts = async (req, res) => {
 
 // Upload Product Image
 const UploadProductImage = async (req, res) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) throw new Error('Session expired');
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
 
-        const { product_id, file } = req.payload;
+    const { product_id, files } = req.payload; // `files` is an array
 
-        const product = await Products.findOne({ where: { id: product_id } });
-        if (!product) throw new Error('Product not found');
-        
-        const path = 'uploads/products/';
-        const productImage = await FileFunctions.uploadFile(req, file, path);
-        if (!productImage || !productImage.file_url) throw new Error('File upload failed');
+    const uploadedFiles = await Promise.all(files.map(async (file) => {
+      const uploaded = await FileFunctions.uploadToS3(file.filename, 'uploads/products', fs.readFileSync(file.path));
+      return ProductImages.create({
+        product_id,
+        file_url: uploaded.key,
+        extension: uploaded.key.split('.').pop(),
+        original_name: uploaded.key,
+        size: fs.statSync(file.path).size,
+      });
+    }));
 
-        const image = await ProductImages.create({
-            product_id,
-            file_url: productImage.file_url,
-            extension: productImage.extension,
-            original_name: productImage.original_name,
-            size: productImage.size,
-        });
-
-        return res.response({
-            success: true,
-            message: 'Product image uploaded successfully',
-            data: image,
-        }).code(201);
-    } catch (error) {
-        console.error('Error uploading product image:', error);
-        return res.response({ success: false, message: error.message });
-    }
+    return res.response({
+      success: true,
+      message: 'Product images uploaded successfully',
+      data: uploadedFiles,
+    }).code(201);
+  } catch (error) {
+    console.error('Error uploading product images:', error);
+    return res.response({ success: false, message: error.message });
+  }
 };
+
 
 // Delete Product Image
 const DeleteProductImage = async (req, res) => {
@@ -275,11 +280,18 @@ const GetImagesByProduct = async (req, res) => {
   try {
     const productId = req.params.productId;
 
-    const images = await ProductImages.findAll({ where: { product_id: productId } });
+    const images = await ProductImages.findAll({ where: { product_id: productId }, raw: true });
+
+    const imagesWithUrl = await Promise.all(
+      images.map(async (img) => ({
+        ...img,
+        file_url: img.file_url ? await FileFunctions.getFromS3(img.file_url) : null
+      }))
+    );
 
     return res.response({
       success: true,
-      data: images,
+      data: imagesWithUrl,
     });
   } catch (error) {
     console.error('Error fetching product images:', error);
