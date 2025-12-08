@@ -148,53 +148,72 @@ const confirmAppointment = async (req, res) => {
 const getDoctorAppointments = async (req, res) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+        if (!session_user) throw new Error('Session expired');
+
         const doctor_id = session_user.doctor_id;
-        if (!doctor_id) {
-            throw new Error('Doctor ID is required');
-        }
-        const { status, date } = req.query;
+        if (!doctor_id) throw new Error('Doctor ID is required');
 
-        const filters = { doctor_id };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Start of today
 
-        if (status) {
-            filters.status = status;
-        }
-        if (date) {
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
-
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
-
-            filters.appointment_date = {
-                [Op.between]: [startOfDay, endOfDay]
-            };
-        }
-
+        // Fetch all appointments for this doctor
         const appointments = await Appointments.findAll({
-            where: filters,
-            include: [{
-                model: Users,
-            }],
+            where: { doctor_id },
+            include: [{ model: Users }],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
         });
+
+        const categorized = {
+            upcoming: [],
+            completed: [],
+            cancelled: [],
+            pending: [],
+            approved: [],
+            all: []
+        };
+
+        appointments.forEach(appt => {
+            categorized.all.push(appt);
+
+            const apptDate = new Date(appt.appointment_date);
+            const status = appt.status?.toLowerCase();
+
+            switch (status) {
+                case 'completed':
+                    categorized.completed.push(appt);
+                    break;
+                case 'cancelled':
+                    categorized.cancelled.push(appt);
+                    break;
+                case 'pending':
+                    categorized.pending.push(appt);
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+                case 'approved':
+                    categorized.approved.push(appt);
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+                default:
+                    // For any other status, consider future appointments as upcoming
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+            }
+        });
+
         return res.response({
             success: true,
-            message: 'Appointments fetched successfully',
-            data: appointments
-        });
+            message: 'Appointments fetched and categorized successfully',
+            data: categorized
+        }).code(200);
+
     } catch (error) {
         console.error('Fetch doctor appointments error:', error);
         return res.response({
             success: false,
             message: error.message || 'Failed to fetch appointments'
-        }).code(200);
+        }).code(500);
     }
 };
-
 const DoctorApproval = async (req, h) => {
     try {
         const session_user = req.headers.user;
@@ -365,85 +384,122 @@ const getadminAppointments = async (req, res) => {
     try {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
+
         const { page, limit, searchquery, doctor_id, status, date, patient_id } = req.query;
-        if (!page || !limit) {
-            throw new Error('Page and limit are required');
-        }
+        if (!page || !limit) throw new Error('Page and limit are required');
+
         let filter = {};
-        if (doctor_id) {
-            filter = {
-                ...filter,
-                doctor_id: doctor_id
-            }
-        }
-        if (status) {
-            filter = {
-                ...filter,
-                status: status
-            }
-        }
+        if (doctor_id) filter.doctor_id = doctor_id;
+        if (status) filter.status = status;
+        if (patient_id) filter.patient_id = patient_id;
         if (date) {
             const startOfDay = new Date(date);
             startOfDay.setHours(0, 0, 0, 0);
-
             const endOfDay = new Date(date);
             endOfDay.setHours(23, 59, 59, 999);
+            filter.appointment_date = { [Op.between]: [startOfDay, endOfDay] };
+        }
 
-            filter = {
-                ...filter,
-                appointment_date: {
-                    [Op.between]: [startOfDay, endOfDay],
-                },
-            };
-        }
-        if (patient_id) {
-            filter = {
-                ...filter,
-                patient_id: patient_id
-            }
-        }
-        const user_count = await Appointments.count({
-            where: filter
-        });
+        const total_count = await Appointments.count({ where: filter });
+
         const appointments = await Appointments.findAll({
             where: filter,
-            limit: limit,
+            limit: parseInt(limit),
             offset: (page - 1) * limit,
             order: [['appointment_date', 'DESC'], ['appointment_time', 'DESC']],
-            include: [{
-                model: Users,
-                attributes: ['id', 'name', 'email', 'phone']
-            }, {
-                model: Doctors,
-                attributes: {
-                    exclude: ['access_token', 'otp_id', 'refresh_token']
-                },
-                include: [{
-                    model: Files,
-                    as: 'profile_image',
-                },
+            include: [
+                { model: Users, attributes: ['id', 'name', 'email', 'phone'] },
                 {
-                    model: Specialization,
-                }]
-
-            }]
+                    model: Doctors,
+                    attributes: { exclude: ['access_token', 'otp_id', 'refresh_token'] },
+                    include: [
+                        { model: Files, as: 'profile_image' },
+                        { model: Specialization }
+                    ]
+                }
+            ]
         });
+
+        // Map S3 URLs for doctor profile images
+        const appointmentsWithImages = await Promise.all(
+            appointments.map(async appt => {
+                const doctorData = { ...appt.Doctor?.dataValues };
+
+                if (doctorData.profile_image?.files_url) {
+                    doctorData.profile_image_url = await FileFunctions.getFromS3(
+                        doctorData.profile_image.files_url
+                    );
+                } else {
+                    doctorData.profile_image_url = null;
+                }
+
+                return {
+                    ...appt.dataValues,
+                    Doctor: doctorData
+                };
+            })
+        );
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const categorized = {
+            all: [],
+            upcoming: [],
+            completed: [],
+            cancelled: [],
+            pending: [],
+            approved: []
+        };
+
+        appointmentsWithImages.forEach(appt => {
+            categorized.all.push(appt);
+
+            const apptDate = new Date(appt.appointment_date);
+            const apptStatus = appt.status?.toLowerCase();
+
+            switch (apptStatus) {
+                case 'completed':
+                    categorized.completed.push(appt);
+                    break;
+                case 'cancelled':
+                    categorized.cancelled.push(appt);
+                    break;
+                case 'pending':
+                    categorized.pending.push(appt);
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+                case 'approved':
+                    categorized.approved.push(appt);
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+                default:
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+            }
+        });
+
         return res.response({
             success: true,
-            message: 'Appointments fetched successfully',
-            data: appointments,
-            total: user_count,
-            page: page,
-            limit: limit
+            message: 'Appointments fetched and categorized successfully',
+            data: {
+                paginated: appointmentsWithImages,
+                total: total_count,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                categorized
+            }
         }).code(200);
+
     } catch (error) {
         console.error(error);
         return res.response({
             success: false,
             message: error.message
-        }).code(200);
+        }).code(500);
     }
-}
+};
+
 const getRtcToken = async (req, h) => {
     try {
         const session_user = req.headers.user;
@@ -476,7 +532,7 @@ const getRtcToken = async (req, h) => {
         return h.response({
             success: false,
             message: err.message
-        }).code(200);
+        });
     }
 };
 
@@ -484,34 +540,100 @@ const getUserAppointments = async (req, res) => {
     try {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
-        const user_count = await Appointments.count({
-            where: {
-                patient_id: session_user.user_id
-            }
-        });
+
+        const user_id = session_user.user_id;
+
+        const user_count = await Appointments.count({ where: { patient_id: user_id } });
+
         const appointments = await Appointments.findAll({
-            where: {
-                patient_id: session_user.user_id
-            },
-            include: [{
-                model: Doctors,
-            }],
+            where: { patient_id: user_id },
+            include: [
+                {
+                    model: Doctors,
+                    include: [{ model: Files, as: 'profile_image' }, { model: Specialization }]
+                }
+            ],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
         });
+
+        // Map S3 URLs for doctor profile images
+        const appointmentsWithImages = await Promise.all(
+            appointments.map(async appt => {
+                const doctorData = { ...appt.Doctor?.dataValues };
+
+                if (doctorData.profile_image?.files_url) {
+                    doctorData.profile_image_url = await FileFunctions.getFromS3(
+                        doctorData.profile_image.files_url
+                    );
+                } else {
+                    doctorData.profile_image_url = null;
+                }
+
+                return {
+                    ...appt.dataValues,
+                    Doctor: doctorData
+                };
+            })
+        );
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Categorize appointments
+        const categorized = {
+            all: [],
+            upcoming: [],
+            completed: [],
+            cancelled: [],
+            pending: [],
+            approved: []
+        };
+
+        appointmentsWithImages.forEach(appt => {
+            categorized.all.push(appt);
+
+            const apptDate = new Date(appt.appointment_date);
+            const apptStatus = appt.status?.toLowerCase();
+
+            switch (apptStatus) {
+                case 'completed':
+                    categorized.completed.push(appt);
+                    break;
+                case 'cancelled':
+                    categorized.cancelled.push(appt);
+                    break;
+                case 'pending':
+                    categorized.pending.push(appt);
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+                case 'approved':
+                    categorized.approved.push(appt);
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+                default:
+                    if (apptDate >= today) categorized.upcoming.push(appt);
+                    break;
+            }
+        });
+
         return res.response({
             success: true,
-            message: 'Appointments fetched successfully',
-            data: appointments,
-            total: user_count,
+            message: 'Appointments fetched and categorized successfully',
+            data: {
+                paginated: appointmentsWithImages,
+                total: user_count,
+                categorized
+            }
         }).code(200);
+
     } catch (error) {
         console.error(error);
         return res.response({
             success: false,
             message: error.message
-        }).code(200);
+        }).code(500);
     }
-}
+};
 
 const checkDoctorAvailability = async (req, res) => {
     try {
@@ -702,30 +824,48 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
         const doctor = await Doctors.findOne({ where: { id: session_user.doctor_id }, raw: true });
         if (!doctor) throw new Error('Invalid doctor');
 
-        // Format today’s date as "MM-DD-YYYY"
+        // Get today's date without time (YYYY-MM-DD)
         const today = new Date();
-        const formattedToday = `${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}-${today.getFullYear()}`;
+        today.setHours(0, 0, 0, 0);
 
-        const appointments = await Appointments.findAll({
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        const appointment = await Appointments.findAll({
             where: {
                 doctor_id: doctor.id,
-                appointment_date: formattedToday
+                appointment_date: {
+                    [Op.gte]: today,
+                    [Op.lt]: tomorrow
+                }
             },
             include: [
                 {
                     model: Users,
-                    attributes: {
-                        exclude: ['access_token', 'refresh_token', 'otp_id']
-                    },
-                    include: [
-                        {
-                            model: Files,
-                        }
-                    ]
+                    attributes: { exclude: ['access_token', 'refresh_token', 'otp_id'] },
+                    include: [{ model: Files }]
                 }
-            ]
-
+            ],
+            order: [['appointment_time', 'ASC']]
         });
+
+        // Map user profile images to S3 URLs
+        const appointments = await Promise.all(
+            appointment.map(async appt => {
+                const userData = { ...appt.User?.dataValues };
+
+                if (userData.Files?.files_url) {
+                    userData.profile_image_url = await FileFunctions.getFromS3(userData.Files.files_url);
+                } else {
+                    userData.profile_image_url = null;
+                }
+
+                return {
+                    ...appt.dataValues,
+                    User: userData
+                };
+            })
+        );
 
         return res.response({
             success: true,
@@ -741,6 +881,7 @@ const getTodaysAppointmentsDoctor = async (req, res) => {
         }).code(200);
     }
 };
+
 
 
 const adminCheckDoctorSlot = async (req, res) => {

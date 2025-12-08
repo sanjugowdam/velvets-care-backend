@@ -258,47 +258,81 @@ const logout = async (req, res) => {
 }
 
 const update_user = async (req, res) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
-        const { name, phone, gender, profile_image, dob } = req.payload;
-        const user = await Users.findOne({ where: { id: session_user.user_id } });
-        if (!user) {
-            throw new Error('User not found');
-        }
-        const storePath = await FileFunctions.uploadFile(req, profile_image, 'uploads/profiles/');
-        const uploadedImage = await FileFunctions.uploadFile(req, image, storePath);
-        const uploaded_files = await Files.create({
-            file_url: uploadedImage.file_url,
-            extension: uploadedImage.extension,
-            original_name: uploadedImage.original_name,
-            size: uploadedImage.size
-        })
-        await Users.update({
-            name: name,
-            phone: phone,
-            gender: gender,
-            dob: dob,
-            profile_image_id: uploaded_files.id,
-        }, {
-            where: {
-                id: session_user.user_id
-            }
-        })
-        return res.response({
-            success: true,
-            message: 'User updated successfully',
-        }).code(200);
-    } catch (error) {
-        console.log(error);
-        return res.response({
-            success: false,
-            message: error.message,
-        }).code(200);
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
+
+    const { name, phone, gender, profile_image, dob } = req.payload;
+
+    const user = await Users.findOne({ where: { id: session_user.user_id } });
+    if (!user) throw new Error('User not found');
+
+    let profileFileId = user.profile_image_id;
+
+    if (profile_image) {
+      // Upload to S3
+      const uploadedFile = await FileFunctions.uploadToS3(
+        profile_image.filename,
+        'uploads/profiles',
+        fs.readFileSync(profile_image.path)
+      );
+
+      // Save file record in DB
+      const fileRecord = await Files.create({
+        file_url: uploadedFile.key,
+        extension: uploadedFile.key.split('.').pop(),
+        original_name: uploadedFile.key,
+        size: fs.statSync(profile_image.path).size
+      });
+
+      profileFileId = fileRecord.id;
     }
-}
+
+    // Update user record
+    await Users.update({
+      name,
+      phone,
+      gender,
+      dob,
+      profile_image_id: profileFileId
+    }, { where: { id: session_user.user_id } });
+
+    // Fetch updated user with profile image
+    const updatedUser = await Users.findOne({
+      where: { id: session_user.user_id },
+      include: [{
+        model: Files,
+        as: 'profile_image',
+        attributes: ['files_url', 'original_name'],
+        required: false
+      }],
+      raw: true,
+      nest: true
+    });
+
+    // Map S3 URL
+    const user_data = {
+      ...updatedUser,
+      profile_image: updatedUser.profile_image?.files_url
+        ? await FileFunctions.getFromS3(updatedUser.profile_image.files_url)
+        : null
+    };
+
+    return res.response({
+      success: true,
+      message: 'User updated successfully',
+      data: user_data
+    }).code(200);
+
+  } catch (error) {
+    console.log(error);
+    return res.response({
+      success: false,
+      message: error.message
+    }).code(500);
+  }
+};
+
 const user_refresh_token = async (req, res) => {
     try {
         const { refresh_token } = req.headers;
@@ -345,46 +379,64 @@ const user_refresh_token = async (req, res) => {
 }
 
 const getusers = async (req, res) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
-        const { page, limit, searchquery } = req.query;
-        let filter = {};
-        if (searchquery) {
-            filter = {
-                [Op.or]: [
-                    { name: { [Op.like]: `%${searchquery}%` } },
-                    { phone: { [Op.like]: `%${searchquery}%` } },
-                ],
-            };
-        }
-        const user_count = await Users.count({
-            where: filter
-        });
-        const users = await Users.findAll({
-            where: filter,
-            limit: limit,
-            offset: (page - 1) * limit,
-        });
-        return res.response({
-            success: true,
-            message: 'Users fetched successfully',
-            data: users,
-            total: user_count,
-            page: page,
-            limit: limit,
-        }).code(200);
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
 
-    } catch (error) {
-        console.log(error);
-        return res.response({
-            success: false,
-            message: error.message,
-        }).code(200);
+    const { page = 1, limit = 10, searchquery } = req.query;
+
+    let filter = {};
+    if (searchquery) {
+      filter = {
+        [Op.or]: [
+          { name: { [Op.like]: `%${searchquery}%` } },
+          { phone: { [Op.like]: `%${searchquery}%` } },
+        ],
+      };
     }
-}
+
+    const user_count = await Users.count({ where: filter });
+
+    const users = await Users.findAll({
+      where: filter,
+      limit: parseInt(limit),
+      offset: (page - 1) * limit,
+      include: [{
+        model: Files,
+        as: 'profile_image',
+        attributes: ['files_url', 'original_name'],
+        required: false
+      }],
+      raw: true,
+      nest: true
+    });
+
+    // Map S3 URLs for profile images
+    const users_mapped = await Promise.all(users.map(async (user) => ({
+      ...user,
+      profile_image: user.profile_image?.files_url
+        ? await FileFunctions.getFromS3(user.profile_image.files_url)
+        : null
+    })));
+
+    return res.response({
+      success: true,
+      message: 'Users fetched successfully',
+      data: users_mapped,
+      total: user_count,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    }).code(200);
+
+  } catch (error) {
+    console.error(error);
+    return res.response({
+      success: false,
+      message: error.message,
+    }).code(500);
+  }
+};
+
 const googleSignIn = async (request, h) => {
     try {
         const { token } = request.payload;
@@ -481,38 +533,68 @@ const getuserData = async (request, h) => {
 };
 
 const CreateUserByAdmin = async (req, res) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
-        const { name, phone, gender, profile_image, dob } = req.payload;
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
 
-        const existing_user = await Users.findOne({ where: { phone } });
-        if (existing_user) {
-            throw new Error('User already exists');
-        }
+    const { name, phone, gender, profile_image, dob } = req.payload;
 
-        const user = await Users.create({
-            name,
-            phone,
-            gender,
-            profile_image,
-            dob
-        });
-        return res.response({
-            success: true,
-            message: 'User created successfully',
-            data: user
-        }).code(200);
-    } catch (error) {
-        console.log(error);
-        return res.response({
-            success: false,
-            message: error.message,
-        }).code(200);
+    const existing_user = await Users.findOne({ where: { phone } });
+    if (existing_user) throw new Error('User already exists');
+
+    let profileFileId = null;
+
+    if (profile_image) {
+      // Upload profile image to S3
+      const uploadedFile = await FileFunctions.uploadToS3(
+        profile_image.filename,
+        'uploads/profiles',
+        fs.readFileSync(profile_image.path)
+      );
+
+      // Save file record in DB
+      const fileRecord = await Files.create({
+        file_url: uploadedFile.key,
+        extension: uploadedFile.key.split('.').pop(),
+        original_name: uploadedFile.key,
+        size: fs.statSync(profile_image.path).size
+      });
+
+      profileFileId = fileRecord.id;
     }
-}
+
+    // Create user
+    const user = await Users.create({
+      name,
+      phone,
+      gender,
+      dob,
+      profile_image_id: profileFileId
+    });
+
+    // Map profile image to S3 URL
+    const userData = {
+      ...user.get({ plain: true }),
+      profile_image: profileFileId
+        ? await FileFunctions.getFromS3((await Files.findByPk(profileFileId)).file_url)
+        : null
+    };
+
+    return res.response({
+      success: true,
+      message: 'User created successfully',
+      data: userData
+    }).code(201);
+
+  } catch (error) {
+    console.error(error);
+    return res.response({
+      success: false,
+      message: error.message
+    }).code(500);
+  }
+};
+
 
 module.exports = {
     request_otp_login,
