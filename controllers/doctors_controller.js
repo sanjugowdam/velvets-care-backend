@@ -330,7 +330,7 @@ const doctorlist_user = async (req, h) => {
             nest: true,
             mapToModel: true
         });
-      const data = doctors.map(async (doc) => ({
+      const data = doctor.map(async (doc) => ({
             profile_image: doc.profile_image?.files_url
                 ? await FileFunctions.getFromS3(doc.profile_image.files_url)
                 : null,
