@@ -6,8 +6,10 @@ const {
     Op
 } = require('sequelize')
 const {
-    FileFunctions, JWTFunctions
+    FileFunctions, JWTFunctions , 
 } = require('../helpers')
+const fs = require('fs')
+
 
 const banner_upload = async (req, res) => {
     try {
@@ -23,12 +25,12 @@ const banner_upload = async (req, res) => {
         if (!title) {
             throw new Error('Banner title required');
         }
-        const uploadedImage = await FileFunctions.uploadFile(req, image, 'uploads/banners/');
+        const uploadedImage = await FileFunctions.uploadToS3(image.filename, 'uploads/banners', fs.readFileSync(image.path));
         const uploaded_files = await Files.create({
-            files_url: uploadedImage.file_url,
-            extension: uploadedImage.extension,
-            original_name: uploadedImage.original_name,
-            size: uploadedImage.size
+            files_url: uploadedImage.key,
+            extension: uploadedImage.key.split('.').pop(),
+            original_name: uploadedImage.key,
+            size: fs.statSync(image.path).size
         })
        const banner = await Banners.create({
             banner_image_id: uploaded_files.id,
@@ -58,12 +60,25 @@ const get_banner_users = async (req, res) => {
                     model: Files,
                     required: true
                 }
-            ]
+            ],
+            raw: true,
+            nest: true,
+            mapToModel: true
+
         })
+        console.log(banner, "banners");
+        const banner_mapped = banner.map(banner_item => {
+            return {
+                id: banner_item.id,
+                title: banner_item.title,
+                image: banner_item.File?.files_url ? FileFunctions.getFromS3(banner_item.File.files_url) : null
+            }
+        })
+        console.log(banner_mapped, "mapped banners");   
         return res.response({
             success: true,
             message: 'Banners fetched successfully',
-            data: banner
+            data: await Promise.all(banner_mapped)
         }).code(200);
         
     } catch (error) {
