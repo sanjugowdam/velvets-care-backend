@@ -126,8 +126,8 @@ const get_banner_admin = async (req, res) => {
         if(!session_user){
             throw new Error('Session expired');
         }
-        const { limit, page } = req.query;
-        
+        const { limit = 10, page = 1 } = req.query;
+
         const banners_count = await Banners.count();
         const banners = await Banners.findAll({
             include: [
@@ -138,11 +138,21 @@ const get_banner_admin = async (req, res) => {
             ],
             limit: limit,
             offset: (page - 1) * limit,
+            raw: true,
+            nest: true,
+            mapToModel: true
         });
+        const banner_mapped = banners.map(async( banner_item) => {
+            return {
+                id: banner_item.id,
+                title: banner_item.title,
+                image: banner_item.file?.files_url ? await FileFunctions.getFromS3(banner_item.file.files_url) : null
+            }
+        })
         return res.response({ 
             success: true,
             message: 'Banners fetched successfully',
-            data: banners,
+            data: await Promise.all(banner_mapped),
             total: banners_count,
             page: page,
             limit: limit
