@@ -311,29 +311,41 @@ const updateStatus = async (req, h) => {
 const doctorlist_user = async (req, h) => {
   try {
     const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
+    if (!session_user) {
+      throw new Error('Session expired');
+    }
 
     const doctors = await Doctors.findAll({
       where: { verified: true },
       include: [
-        { model: Files, as: 'profile_image' },   // ✅ MUST MATCH MODEL
-        { model: Adresses },                     // no alias → ok
-        { model: Doctorsavailability }           // no alias → ok
-      ]
+        { model: Files, as: 'profile_image' },
+        { model: Adresses },
+        { model: Doctorsavailability }
+      ],
+      raw: true,
+      nest: true
     });
 
+    // 🔹 Only adjust profile image, keep everything else same
+    const doctor_mapped = doctors.map(async (doctor) => {
+      if (doctor.profile_image?.files_url) {
+        doctor.profile_image.files_url =
+          await FileFunctions.getFromS3(doctor.profile_image.files_url);
+      }
+      return doctor;
+    });
 
     return h.response({
       success: true,
       message: 'Doctor list fetched successfully',
-      data: doctors
+      data: await Promise.all(doctor_mapped)
     }).code(200);
 
-  } catch (err) {
-    console.error('Doctor list error:', err);
+  } catch (error) {
+    console.error('Doctor list error:', error);
     return h.response({
       success: false,
-      message: err.message
+      message: error.message
     }).code(500);
   }
 };
