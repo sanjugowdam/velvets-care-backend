@@ -313,45 +313,11 @@ const doctorlist_user = async (req, h) => {
     const session_user = req.headers.user;
     if (!session_user) throw new Error('Session expired');
 
-    const doctors = await Doctors.findAll({
-      where: { verified: true },
-      include: [
-        { model: Files, as: 'profile_image', required: false },
-        { model: Adresses },
-        { model: Doctorsavailability }
-      ],
-      raw: true,
-      nest: true
-    });
-
-    const mapped = doctors.map(async (doc) => ({
-      ...doc,
-      profile_image: doc.profile_image?.files_url ? await FileFunctions.getFromS3(doc.profile_image.files_url) : null
-    }));
-
-    return h.response({
-      success: true,
-      message: 'Doctor list fetched successfully',
-      data: await Promise.all(mapped)
-    }).code(200);
-
-  } catch (err) {
-    console.error(err);
-    return h.response({ success: false, message: err.message }).code(500);
-  }
-};
-
-
-
-const doctorlist = async (req, h) => {
-  try {
-    const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
-
     const { specialization, years_of_experience, searchquery, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
 
-    let filter = {};
+    let filter = { verified: true };
+
     if (searchquery) {
       filter[Op.or] = [
         { full_name: { [Op.like]: `%${searchquery}%` } },
@@ -363,45 +329,147 @@ const doctorlist = async (req, h) => {
 
     const total = await Doctors.count({ where: filter });
 
+    const rows = await Doctors.findAll({
+      where: filter,
+      limit: Number(limit),
+      offset,
+      include: [
+        { model: Files, as: 'profile_image', required: false }, // Only profile image
+        { model: Adresses },
+        { model: Doctorsavailability }
+      ],
+      raw: true,
+      nest: true,
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Map doctors by ID (handle multiple availabilities)
+    const doctorMap = {};
+
+    for (const row of rows) {
+      const doctorId = row.id;
+
+      if (!doctorMap[doctorId]) {
+        doctorMap[doctorId] = { ...row };
+
+        // Banner-style async fetch for profile image only
+        doctorMap[doctorId].profile_image = row.profile_image?.files_url
+          ? await FileFunctions.getFromS3(row.profile_image.files_url)
+          : null;
+
+        doctorMap[doctorId].doctorsavailabilities = [];
+      }
+
+      // Push multiple availabilities
+      if (row.doctorsavailabilities?.id) {
+        doctorMap[doctorId].doctorsavailabilities.push(row.doctorsavailabilities);
+      }
+    }
+
+    return h.response({
+      success: true,
+      message: 'Doctor list fetched successfully',
+      data: Object.values(doctorMap),
+      total,
+      page: Number(page),
+      limit: Number(limit)
+    }).code(200);
+
+  } catch (error) {
+    console.error('Doctor list user error:', error);
+    return h.response({
+      success: false,
+      message: error.message
+    }).code(500);
+  }
+};
+
+
+
+
+const doctorlist = async (req, h) => {
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
+
+    const { specialization, years_of_experience, searchquery, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    let filter = {};
+
+    if (searchquery) {
+      filter[Op.or] = [
+        { full_name: { [Op.like]: `%${searchquery}%` } },
+        { phone: { [Op.like]: `%${searchquery}%` } }
+      ];
+    }
+
+    if (specialization) filter.specialization = specialization;
+    if (years_of_experience) filter.years_of_experience = Number(years_of_experience);
+
+    const total = await Doctors.count({ where: filter });
+
     const doctors = await Doctors.findAll({
       where: filter,
+      limit: Number(limit),
+      offset,
       include: [
         { model: Adresses },
         { model: Doctorsavailability },
+
         { model: Files, as: 'profile_image', required: false },
         { model: Files, as: 'registration_certificate', required: false },
         { model: Files, as: 'medical_degree_certificate', required: false },
         { model: Files, as: 'government_id_file', required: false },
-        { model: Files, as: 'pan_card_file', required: false }
+        { model: Files, as: 'pan_card_file', required: false },
       ],
       raw: true,
       nest: true,
-      offset,
-      limit,
       order: [['createdAt', 'DESC']]
     });
 
-    const mapped_doctors = doctors.map(async (doc) => ({
-      ...doc,
-      profile_image: doc.profile_image?.files_url ? await FileFunctions.getFromS3(doc.profile_image.files_url) : null,
-      registration_certificate: doc.registration_certificate?.files_url ? await FileFunctions.getFromS3(doc.registration_certificate.files_url) : null,
-      medical_degree_certificate: doc.medical_degree_certificate?.files_url ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url) : null,
-      government_id: doc.government_id_file?.files_url ? await FileFunctions.getFromS3(doc.government_id_file.files_url) : null,
-      pan_card: doc.pan_card_file?.files_url ? await FileFunctions.getFromS3(doc.pan_card_file.files_url) : null
-    }));
+    // Map doctors and fetch all images exactly like banner
+    const mapped_doctors = await Promise.all(
+      doctors.map(async (doc) => {
+        return {
+          ...doc,
+          profile_image: doc.profile_image?.files_url
+            ? await FileFunctions.getFromS3(doc.profile_image.files_url)
+            : null,
+
+          registration_certificate: doc.registration_certificate?.files_url
+            ? await FileFunctions.getFromS3(doc.registration_certificate.files_url)
+            : null,
+
+          medical_degree_certificate: doc.medical_degree_certificate?.files_url
+            ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url)
+            : null,
+
+          government_id: doc.government_id_file?.files_url
+            ? await FileFunctions.getFromS3(doc.government_id_file.files_url)
+            : null,
+
+          pan_card: doc.pan_card_file?.files_url
+            ? await FileFunctions.getFromS3(doc.pan_card_file.files_url)
+            : null
+        };
+      })
+    );
 
     return h.response({
       success: true,
       message: 'Doctors fetched successfully',
-      data: await Promise.all(mapped_doctors),
+      data: mapped_doctors,
       total,
       page: Number(page),
       limit: Number(limit)
     }).code(200);
 
   } catch (err) {
-    console.error(err);
-    return h.response({ success: false, message: err.message }).code(500);
+    console.error('Doctor list error:', err);
+    return h.response({
+      success: false,
+      message: err.message
+    }).code(500);
   }
 };
 
@@ -433,19 +501,36 @@ const fetch_single_doctor = async (req, h) => {
       return h.response({ success: false, message: 'Doctor not found' }).code(404);
     }
 
-    const doctor_data = {
-      ...doctor,
-      profile_image: doctor.profile_image?.files_url ? await FileFunctions.getFromS3(doctor.profile_image.files_url) : null,
-      registration_certificate: doctor.registration_certificate?.files_url ? await FileFunctions.getFromS3(doctor.registration_certificate.files_url) : null,
-      medical_degree_certificate: doctor.medical_degree_certificate?.files_url ? await FileFunctions.getFromS3(doctor.medical_degree_certificate.files_url) : null,
-      government_id: doctor.government_id_file?.files_url ? await FileFunctions.getFromS3(doctor.government_id_file.files_url) : null,
-      pan_card: doctor.pan_card_file?.files_url ? await FileFunctions.getFromS3(doctor.pan_card_file.files_url) : null
-    };
+    // Wrap the doctor object in an array to use banner-style Promise mapping
+    const doctor_mapped = await Promise.all(
+      [doctor].map(async (d) => ({
+        ...d,
+        profile_image: d.profile_image?.files_url
+          ? await FileFunctions.getFromS3(d.profile_image.files_url)
+          : null,
+        registration_certificate: d.registration_certificate?.files_url
+          ? await FileFunctions.getFromS3(d.registration_certificate.files_url)
+          : null,
+        medical_degree_certificate: d.medical_degree_certificate?.files_url
+          ? await FileFunctions.getFromS3(d.medical_degree_certificate.files_url)
+          : null,
+        government_id: d.government_id_file?.files_url
+          ? await FileFunctions.getFromS3(d.government_id_file.files_url)
+          : null,
+        pan_card: d.pan_card_file?.files_url
+          ? await FileFunctions.getFromS3(d.pan_card_file.files_url)
+          : null
+      }))
+    );
 
-    return h.response({ success: true, message: 'Doctor fetched successfully', data: doctor_data }).code(200);
+    return h.response({
+      success: true,
+      message: 'Doctor fetched successfully',
+      data: doctor_mapped[0]  // return single doctor object
+    }).code(200);
 
   } catch (err) {
-    console.error(err);
+    console.error('Fetch single doctor error:', err);
     return h.response({ success: false, message: err.message }).code(500);
   }
 };
