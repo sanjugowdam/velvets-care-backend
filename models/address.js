@@ -28,9 +28,11 @@ const Doctors  =require ('../models/doctors')
   }, {
     sequelize,
     modelName: Adresses,
+    paranoid: true
   });
   
   Address.belongsTo(Doctors, { foreignKey: 'doctor_id' });
   Doctors.hasMany(Address, { foreignKey: 'doctor_id' });
+
   module.exports = Address
 
