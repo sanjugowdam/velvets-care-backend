@@ -315,7 +315,7 @@ const doctorlist_user = async (req, h) => {
       throw new Error('Session expired');
     }
 
-    const doctors = await Doctors.findAll({
+    const rows = await Doctors.findAll({
       where: { verified: true },
       include: [
         { model: Files, as: 'profile_image' },
@@ -326,19 +326,37 @@ const doctorlist_user = async (req, h) => {
       nest: true
     });
 
-    // 🔹 Only adjust profile image, keep everything else same
-    const doctor_mapped = doctors.map(async (doctor) => {
-      if (doctor.profile_image?.files_url) {
-        doctor.profile_image.files_url =
-          await FileFunctions.getFromS3(doctor.profile_image.files_url);
+    const doctorMap = {};
+
+    for (const row of rows) {
+      const doctorId = row.id;
+
+      // First time doctor appears
+      if (!doctorMap[doctorId]) {
+        // 🔹 Resolve profile image EXACTLY like banner
+        if (row.profile_image?.files_url) {
+          row.profile_image.files_url =
+            await FileFunctions.getFromS3(row.profile_image.files_url);
+        }
+
+        doctorMap[doctorId] = {
+          ...row,
+          doctorsavailabilities: []
+        };
       }
-      return doctor;
-    });
+
+      // Push availability if exists
+      if (row.doctorsavailabilities?.id) {
+        doctorMap[doctorId].doctorsavailabilities.push(
+          row.doctorsavailabilities
+        );
+      }
+    }
 
     return h.response({
       success: true,
       message: 'Doctor list fetched successfully',
-      data: await Promise.all(doctor_mapped)
+      data: Object.values(doctorMap)
     }).code(200);
 
   } catch (error) {
@@ -349,6 +367,7 @@ const doctorlist_user = async (req, h) => {
     }).code(500);
   }
 };
+
 
 
 
