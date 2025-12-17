@@ -311,39 +311,47 @@ const updateStatus = async (req, h) => {
 const doctorlist_user = async (req, h) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+        if (!session_user) throw new Error('Session expired');
+
         const doctors = await Doctors.findAll({
             where: { verified: true },
             include: [
                 {
                     model: Files,
                     as: 'profile_image',
+                    required: false
                 },
                 {
                     model: Adresses,
+                    required: false
                 },
                 {
                     model: Doctorsavailability,
+                    required: false
                 }
             ]
         });
 
         const doctor_mapped = await Promise.all(
-            doctors.map(async (doc) => ({
-                id: doc.id,
-                full_name: doc.full_name,
-                specialization: doc.specialization,
-                consultation_fee: doc.consultation_fee,
+            doctors.map(async (doc) => {
+                const d = doc.get({ plain: true });
 
-                profile_image: doc.profile_image?.files_url
-                    ? await FileFunctions.getFromS3(doc.profile_image.files_url)
-                    : null,
+                return {
+                    id: d.id,
+                    full_name: d.full_name,
+                    specialization: d.specialization,
+                    consultation_fee: d.consultation_fee,
 
-                address: doc.Adresses || null,
-                availability: doc.Doctorsavailabilities || []
-            }))
+                    // ✅ ONLY FILE USES S3
+                    profile_image: d.profile_image?.files_url
+                        ? await FileFunctions.getFromS3(d.profile_image.files_url)
+                        : null,
+
+                    // ✅ SEPARATE MODELS – NO EXTRA LOGIC
+                    address: d.Adress || null,
+                    availability: d.Doctorsavailabilities || []
+                };
+            })
         );
 
         return h.response({
@@ -360,6 +368,7 @@ const doctorlist_user = async (req, h) => {
         }).code(500);
     }
 };
+
 
 const doctorlist = async (req, h) => {
     try {
