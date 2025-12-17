@@ -173,7 +173,7 @@ module.exports = [
 
     {
         method: 'GET',
-        path: '/user/doctor/{id}',
+        path: '/user/doctor/{doctor_id}',
         options: {
             description: 'Get a single doctor',
             tags,
