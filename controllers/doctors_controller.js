@@ -310,22 +310,22 @@ const updateStatus = async (req, h) => {
 };
 const doctorlist_user = async (req, h) => {
     try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
         const doctors = await Doctors.findAll({
             where: { verified: true },
             include: [
                 {
                     model: Files,
                     as: 'profile_image',
-                    attributes: ['files_url'],
-                    required: false
                 },
                 {
                     model: Adresses,
-                    required: false
                 },
                 {
                     model: Doctorsavailability,
-                    required: false
                 }
             ]
         });
