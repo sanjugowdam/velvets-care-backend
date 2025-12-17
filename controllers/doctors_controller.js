@@ -24,7 +24,7 @@ const { off } = require('../config/mailer');
 
 const updateBasicDetails = async (req, h) => {
     try {
-         const transaction = await sequelize.transaction();
+        const transaction = await sequelize.transaction();
         const session_user = req.headers.user;
         if (!session_user) {
             throw new Error('Session expired');
@@ -56,7 +56,7 @@ const updateBasicDetails = async (req, h) => {
         let panFileId = null;
 
         if (profile_image) {
-            const uploadedfile = await FileFunctions.uploadToS3(profile_image.filename,  'uploads/profile_images', fs.readFileSync(profile_image.path));
+            const uploadedfile = await FileFunctions.uploadToS3(profile_image.filename, 'uploads/profile_images', fs.readFileSync(profile_image.path));
             const profileFile = await Files.create({
                 file_url: uploadedfile.key,
                 extension: uploadedfile.key.split('.').pop(),
@@ -67,7 +67,7 @@ const updateBasicDetails = async (req, h) => {
         }
 
         if (government_id) {
-            const uploadedfile = await FileFunctions.uploadToS3(government_id.filename,  'uploads/government_ids', fs.readFileSync(government_id.path));
+            const uploadedfile = await FileFunctions.uploadToS3(government_id.filename, 'uploads/government_ids', fs.readFileSync(government_id.path));
             const govFile = await Files.create({
                 file_url: uploadedfile.key,
                 extension: uploadedfile.key.split('.').pop(),
@@ -78,7 +78,7 @@ const updateBasicDetails = async (req, h) => {
         }
 
         if (pan_card) {
-            const uploadedfile = await FileFunctions.uploadToS3(pan_card.filename,  'uploads/pan_cards', fs.readFileSync(pan_card.path));
+            const uploadedfile = await FileFunctions.uploadToS3(pan_card.filename, 'uploads/pan_cards', fs.readFileSync(pan_card.path));
             const panFile = await Files.create({
                 file_url: uploadedfile.key,
                 extension: uploadedfile.key.split('.').pop(),
@@ -89,7 +89,7 @@ const updateBasicDetails = async (req, h) => {
         }
 
         if (registration_certificate) {
-            const uploadedfile = await FileFunctions.uploadToS3(registration_certificate.filename,  'uploads/registration_certificates', fs.readFileSync(registration_certificate.path));
+            const uploadedfile = await FileFunctions.uploadToS3(registration_certificate.filename, 'uploads/registration_certificates', fs.readFileSync(registration_certificate.path));
             const regFile = await Files.create({
                 file_url: uploadedfile.key,
                 extension: uploadedfile.key.split('.').pop(),
@@ -100,7 +100,7 @@ const updateBasicDetails = async (req, h) => {
         }
 
         if (medical_degree_certificate) {
-            const uploadedfile = await FileFunctions.uploadToS3(medical_degree_certificate.filename,  'uploads/medical_degree_certificates', fs.readFileSync(medical_degree_certificate.path));
+            const uploadedfile = await FileFunctions.uploadToS3(medical_degree_certificate.filename, 'uploads/medical_degree_certificates', fs.readFileSync(medical_degree_certificate.path));
             const degreeFile = await Files.create({
                 file_url: uploadedfile.key,
                 extension: uploadedfile.key.split('.').pop(),
@@ -134,7 +134,7 @@ const updateBasicDetails = async (req, h) => {
             message: 'Basic details updated successfully',
             data: doctor
         }).code(201);
-        
+
     } catch (err) {
         await transaction.rollback();
         console.error(err);
@@ -308,52 +308,10 @@ const updateStatus = async (req, h) => {
         }).code(200);
     }
 };
-const doctorlist_user = async (req, h) => {
-  try {
-    const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
-
-    const doctors = await Doctors.findAll({
-      where: { verified: true },
-      include: [
-        { model: Files, as: 'profile_image' },   // ✅ MUST MATCH MODEL
-        { model: Adresses },                     // no alias → ok
-        { model: Doctorsavailability }           // no alias → ok
-      ]
-    });
-
-    const doctor_mapped = await Promise.all(
-      doctors.map(async (doc) => ({
-        id: doc.id,
-        full_name: doc.full_name,
-        specialization: doc.specialization,
-        consultation_fee: doc.consultation_fee,
-
-        // ✅ ONLY image logic
-        profile_image: doc.profile_image?.files_url
-          ? await FileFunctions.getFromS3(doc.profile_image.files_url)
-          : null,
-
-        // ✅ Sequelize default names
-        address: doc.Adresses || [],
-        availability: doc.Doctorsavailabilities || []
-      }))
-    );
-
-    return h.response({
-      success: true,
-      message: 'Doctor list fetched successfully',
-      data: doctor_mapped
-    }).code(200);
-
-  } catch (err) {
-    console.error('Doctor list error:', err);
-    return h.response({
-      success: false,
-      message: err.message
-    }).code(500);
-  }
-};
+const doctorlist_user = async (req, h) =>
+     {
+         try {
+             const doctors = await Doctors.findAll({ include: [{ model: Adresses }, { model: Doctorsavailability }, { model: Files, as: 'profile_image', required: false }, { model: Files, as: 'government_id_file', required: false }, { model: Files, as: 'pan_card_file', required: false }, { model: Files, as: 'registration_certificate_file', required: false }, { model: Files, as: 'medical_degree_certificate_file', required: false }], where: { verified: true }, raw: true, nest: true, mapToModel: true }); const doctor_mapped = doctors.map(async (doc) => ({ id: doc.id, full_name: doc.full_name, specialization: doc.specialization, consultation_fee: doc.consultation_fee, profile_image: doc.profile_image?.files_url ? await FileFunctions.getFromS3(doc.profile_image.files_url) : null, government_id: doc.government_id_file?.files_url ? await FileFunctions.getFromS3(doc.government_id_file.files_url) : null, pan_card: doc.pan_card_file?.files_url ? await FileFunctions.getFromS3(doc.pan_card_file.files_url) : null, registration_certificate: doc.registration_certificate_file?.files_url ? await FileFunctions.getFromS3(doc.registration_certificate_file.files_url) : null, medical_degree_certificate: doc.medical_degree_certificate_file?.files_url ? await FileFunctions.getFromS3(doc.medical_degree_certificate_file.files_url) : null, address: doc.Adress, availability: doc.Doctorsavailability })); return h.response({ success: true, message: 'Doctor list fetched successfully', data: await Promise.all(doctor_mapped) }).code(200); } catch (err) { console.error(err); return h.response({ success: false, message: 'Error finding doctor' }).code(500); } };
 
 
 
@@ -828,7 +786,7 @@ const deleteDoctor = async (req, h) => {
             message: 'Doctor deleted successfully',
             data: doctor
         }).code(200);
-    
+
     } catch (err) {
         console.error(err);
         return h.response({
@@ -839,33 +797,33 @@ const deleteDoctor = async (req, h) => {
 };
 
 const CheckDoctorSlotsByAdmin = async (req, h) => {
-  try {
-      const session_user = req.headers.user;
-      if (!session_user) {
-          throw new Error('Session expired');
-      }
-      const { doctor_id } = req.params;
-      const doctor = await Doctorsavailability.findOne({
-          where: { id: doctor_id }
-      });
-      if (!doctor) {
-          throw new Error('Doctor not found');
-      }
-      const slots = await Doctorsavailability.findAll({
-          where: { doctor_id }
-      });
-      return h.response({
-          success: true,
-          data: slots
-      }).code(200);
-  } catch (error) {
-      console.error(error);
-      return h.response({
-          success: false,
-          message: error.message
-      });
-    
-  }
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        const { doctor_id } = req.params;
+        const doctor = await Doctorsavailability.findOne({
+            where: { id: doctor_id }
+        });
+        if (!doctor) {
+            throw new Error('Doctor not found');
+        }
+        const slots = await Doctorsavailability.findAll({
+            where: { doctor_id }
+        });
+        return h.response({
+            success: true,
+            data: slots
+        }).code(200);
+    } catch (error) {
+        console.error(error);
+        return h.response({
+            success: false,
+            message: error.message
+        });
+
+    }
 }
 
 module.exports = {
