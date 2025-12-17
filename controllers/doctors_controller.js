@@ -309,65 +309,52 @@ const updateStatus = async (req, h) => {
     }
 };
 const doctorlist_user = async (req, h) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) throw new Error('Session expired');
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
 
-        const doctors = await Doctors.findAll({
-            where: { verified: true },
-            include: [
-                {
-                    model: Files,
-                    as: 'profile_image',
-                    required: false
-                },
-                {
-                    model: Adresses,
-                    required: false
-                },
-                {
-                    model: Doctorsavailability,
-                    required: false
-                }
-            ]
-        });
+    const doctors = await Doctors.findAll({
+      where: { verified: true },
+      include: [
+        { model: Files, as: 'profile_image' },   // ✅ MUST MATCH MODEL
+        { model: Adresses },                     // no alias → ok
+        { model: Doctorsavailability }           // no alias → ok
+      ]
+    });
 
-        const doctor_mapped = await Promise.all(
-            doctors.map(async (doc) => {
-                const d = doc.get({ plain: true });
+    const doctor_mapped = await Promise.all(
+      doctors.map(async (doc) => ({
+        id: doc.id,
+        full_name: doc.full_name,
+        specialization: doc.specialization,
+        consultation_fee: doc.consultation_fee,
 
-                return {
-                    id: d.id,
-                    full_name: d.full_name,
-                    specialization: d.specialization,
-                    consultation_fee: d.consultation_fee,
+        // ✅ ONLY image logic
+        profile_image: doc.profile_image?.files_url
+          ? await FileFunctions.getFromS3(doc.profile_image.files_url)
+          : null,
 
-                    // ✅ ONLY FILE USES S3
-                    profile_image: d.profile_image?.files_url
-                        ? await FileFunctions.getFromS3(d.profile_image.files_url)
-                        : null,
+        // ✅ Sequelize default names
+        address: doc.Adresses || [],
+        availability: doc.Doctorsavailabilities || []
+      }))
+    );
 
-                    // ✅ SEPARATE MODELS – NO EXTRA LOGIC
-                    address: d.Adress || null,
-                    availability: d.Doctorsavailabilities || []
-                };
-            })
-        );
+    return h.response({
+      success: true,
+      message: 'Doctor list fetched successfully',
+      data: doctor_mapped
+    }).code(200);
 
-        return h.response({
-            success: true,
-            message: 'Doctor list fetched successfully',
-            data: doctor_mapped
-        }).code(200);
-
-    } catch (err) {
-        console.error('Doctor list error:', err);
-        return h.response({
-            success: false,
-            message: err.message
-        }).code(500);
-    }
+  } catch (err) {
+    console.error('Doctor list error:', err);
+    return h.response({
+      success: false,
+      message: err.message
+    }).code(500);
+  }
 };
+
 
 
 const doctorlist = async (req, h) => {
