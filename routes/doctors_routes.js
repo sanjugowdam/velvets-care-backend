@@ -140,6 +140,7 @@ module.exports = [
             ],
             validate: {
                 headers: HeaderValidator,
+                 query: fecthdoctors_admin,
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
