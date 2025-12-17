@@ -313,82 +313,31 @@ const doctorlist_user = async (req, h) => {
     const session_user = req.headers.user;
     if (!session_user) throw new Error('Session expired');
 
-    const {
-      specialization,
-      years_of_experience,
-      searchquery,
-      page = 1,
-      limit = 10
-    } = req.query;
-
-    const offset = (page - 1) * limit;
-    let filter = { verified: true };
-
-    if (searchquery) {
-      filter[Op.or] = [
-        { full_name: { [Op.like]: `%${searchquery}%` } },
-        { phone: { [Op.like]: `%${searchquery}%` } },
-      ];
-    }
-
-    if (specialization) filter.specialization = specialization;
-    if (years_of_experience) filter.years_of_experience = Number(years_of_experience);
-
-    const total = await Doctors.count({ where: filter });
-
-    const rows = await Doctors.findAll({
-      where: filter,
-      limit: Number(limit),
-      offset,
+    const doctors = await Doctors.findAll({
+      where: { verified: true },
       include: [
-        { model: Files, as: 'profile_image', attributes: ['files_url'], required: false },
+        { model: Files, as: 'profile_image', required: false },
         { model: Adresses },
         { model: Doctorsavailability }
       ],
       raw: true,
-      nest: true,
-      order: [['createdAt', 'DESC']]
+      nest: true
     });
 
-    const doctorMap = {};
-
-    for (const row of rows) {
-      const doctorId = row.id;
-
-      if (!doctorMap[doctorId]) {
-        doctorMap[doctorId] = { ...row };
-
-        // ✅ SAME AS BANNER IMAGE FETCH
-        doctorMap[doctorId].profile_image =
-          row.profile_image?.files_url
-            ? await FileFunctions.getFromS3(row.profile_image.files_url)
-            : null;
-
-        doctorMap[doctorId].doctorsavailabilities = [];
-      }
-
-      if (row.doctorsavailabilities?.id) {
-        doctorMap[doctorId].doctorsavailabilities.push(
-          row.doctorsavailabilities
-        );
-      }
-    }
+    const mapped = doctors.map(async (doc) => ({
+      ...doc,
+      profile_image: doc.profile_image?.files_url ? await FileFunctions.getFromS3(doc.profile_image.files_url) : null
+    }));
 
     return h.response({
       success: true,
       message: 'Doctor list fetched successfully',
-      data: Object.values(doctorMap),
-      total,
-      page: Number(page),
-      limit: Number(limit)
+      data: await Promise.all(mapped)
     }).code(200);
 
-  } catch (error) {
-    console.error('Doctor list user error:', error);
-    return h.response({
-      success: false,
-      message: error.message
-    }).code(500);
+  } catch (err) {
+    console.error(err);
+    return h.response({ success: false, message: err.message }).code(500);
   }
 };
 
@@ -399,24 +348,16 @@ const doctorlist = async (req, h) => {
     const session_user = req.headers.user;
     if (!session_user) throw new Error('Session expired');
 
-    const {
-      specialization,
-      years_of_experience,
-      searchquery,
-      page = 1,
-      limit = 10
-    } = req.query;
-
+    const { specialization, years_of_experience, searchquery, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
-    let filter = {};
 
+    let filter = {};
     if (searchquery) {
       filter[Op.or] = [
         { full_name: { [Op.like]: `%${searchquery}%` } },
-        { phone: { [Op.like]: `%${searchquery}%` } },
+        { phone: { [Op.like]: `%${searchquery}%` } }
       ];
     }
-
     if (specialization) filter.specialization = specialization;
     if (years_of_experience) filter.years_of_experience = Number(years_of_experience);
 
@@ -424,299 +365,242 @@ const doctorlist = async (req, h) => {
 
     const doctors = await Doctors.findAll({
       where: filter,
-      limit: Number(limit),
-      offset,
-      attributes: { exclude: ['access_token', 'refresh_token'] },
       include: [
         { model: Adresses },
         { model: Doctorsavailability },
-
-        { model: Files, as: 'profile_image', attributes: ['files_url'], required: false },
-        { model: Files, as: 'registration_certificate', attributes: ['files_url'], required: false },
-        { model: Files, as: 'medical_degree_certificate', attributes: ['files_url'], required: false },
-        { model: Files, as: 'government_id_file', attributes: ['files_url'], required: false },
-        { model: Files, as: 'pan_card_file', attributes: ['files_url'], required: false },
+        { model: Files, as: 'profile_image', required: false },
+        { model: Files, as: 'registration_certificate', required: false },
+        { model: Files, as: 'medical_degree_certificate', required: false },
+        { model: Files, as: 'government_id_file', required: false },
+        { model: Files, as: 'pan_card_file', required: false }
       ],
+      raw: true,
+      nest: true,
+      offset,
+      limit,
       order: [['createdAt', 'DESC']]
     });
 
-    const mapped_doctors = await Promise.all(
-      doctors.map(async (doc) => {
-        const d = doc.get({ plain: true });
-
-        return {
-          ...d,
-
-          // ✅ EXACTLY LIKE BANNER (only URL string)
-          profile_image: d.profile_image?.files_url
-            ? await FileFunctions.getFromS3(d.profile_image.files_url)
-            : null,
-
-          registration_certificate: d.registration_certificate?.files_url
-            ? await FileFunctions.getFromS3(d.registration_certificate.files_url)
-            : null,
-
-          medical_degree_certificate: d.medical_degree_certificate?.files_url
-            ? await FileFunctions.getFromS3(d.medical_degree_certificate.files_url)
-            : null,
-
-          government_id: d.government_id_file?.files_url
-            ? await FileFunctions.getFromS3(d.government_id_file.files_url)
-            : null,
-
-          pan_card: d.pan_card_file?.files_url
-            ? await FileFunctions.getFromS3(d.pan_card_file.files_url)
-            : null,
-
-          // ❌ remove raw file objects
-          registration_certificate_file: undefined,
-          medical_degree_certificate_file: undefined,
-          government_id_file: undefined,
-          pan_card_file: undefined
-        };
-      })
-    );
+    const mapped_doctors = doctors.map(async (doc) => ({
+      ...doc,
+      profile_image: doc.profile_image?.files_url ? await FileFunctions.getFromS3(doc.profile_image.files_url) : null,
+      registration_certificate: doc.registration_certificate?.files_url ? await FileFunctions.getFromS3(doc.registration_certificate.files_url) : null,
+      medical_degree_certificate: doc.medical_degree_certificate?.files_url ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url) : null,
+      government_id: doc.government_id_file?.files_url ? await FileFunctions.getFromS3(doc.government_id_file.files_url) : null,
+      pan_card: doc.pan_card_file?.files_url ? await FileFunctions.getFromS3(doc.pan_card_file.files_url) : null
+    }));
 
     return h.response({
       success: true,
       message: 'Doctors fetched successfully',
-      data: mapped_doctors,
+      data: await Promise.all(mapped_doctors),
       total,
       page: Number(page),
-      limit: Number(limit),
+      limit: Number(limit)
     }).code(200);
 
   } catch (err) {
     console.error(err);
-    return h.response({
-      success: false,
-      message: err.message,
-    }).code(500);
+    return h.response({ success: false, message: err.message }).code(500);
   }
 };
 
 
 
 const fetch_single_doctor = async (req, h) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
 
-        const { doctor_id } = req.params;
+    const { doctor_id } = req.params;
 
-        const doctor = await Doctors.findOne({
-            where: { id: doctor_id },
-            include: [
-                { model: Adresses },
-                { model: Doctorsavailability },
+    const doctor = await Doctors.findOne({
+      where: { id: doctor_id },
+      include: [
+        { model: Adresses },
+        { model: Doctorsavailability },
+        { model: Files, as: 'profile_image', required: false },
+        { model: Files, as: 'registration_certificate', required: false },
+        { model: Files, as: 'medical_degree_certificate', required: false },
+        { model: Files, as: 'government_id_file', required: false },
+        { model: Files, as: 'pan_card_file', required: false }
+      ],
+      raw: true,
+      nest: true
+    });
 
-                { model: Files, as: 'profile_image', required: false },
-                { model: Files, as: 'registration_certificate', required: false },
-                { model: Files, as: 'medical_degree_certificate', required: false },
-                { model: Files, as: 'government_id_file', required: false },
-                { model: Files, as: 'pan_card_file', required: false },
-            ],
-            raw: true,
-            nest: true,
-            mapToModel: true
-        });
-
-        if (!doctor) {
-            throw new Error('Doctor not found');
-        }
-
-        const doctor_data = {
-            ...doctor,
-
-            profile_image: doctor.profile_image?.files_url
-                ? await FileFunctions.getFromS3(doctor.profile_image.files_url)
-                : null,
-
-            registration_certificate: doctor.registration_certificate?.files_url
-                ? await FileFunctions.getFromS3(doctor.registration_certificate.files_url)
-                : null,
-
-            medical_degree_certificate: doctor.medical_degree_certificate?.files_url
-                ? await FileFunctions.getFromS3(doctor.medical_degree_certificate.files_url)
-                : null,
-
-            government_id: doctor.government_id_file?.files_url
-                ? await FileFunctions.getFromS3(doctor.government_id_file.files_url)
-                : null,
-
-            pan_card: doctor.pan_card_file?.files_url
-                ? await FileFunctions.getFromS3(doctor.pan_card_file.files_url)
-                : null,
-        };
-
-        return h.response({
-            success: true,
-            message: 'Doctor fetched successfully',
-            data: doctor_data
-        }).code(200);
-
-    } catch (err) {
-        console.error(err);
-        return h.response({
-            success: false,
-            message: err.message
-        }).code(500);
+    if (!doctor) {
+      return h.response({ success: false, message: 'Doctor not found' }).code(404);
     }
+
+    const doctor_data = {
+      ...doctor,
+      profile_image: doctor.profile_image?.files_url ? await FileFunctions.getFromS3(doctor.profile_image.files_url) : null,
+      registration_certificate: doctor.registration_certificate?.files_url ? await FileFunctions.getFromS3(doctor.registration_certificate.files_url) : null,
+      medical_degree_certificate: doctor.medical_degree_certificate?.files_url ? await FileFunctions.getFromS3(doctor.medical_degree_certificate.files_url) : null,
+      government_id: doctor.government_id_file?.files_url ? await FileFunctions.getFromS3(doctor.government_id_file.files_url) : null,
+      pan_card: doctor.pan_card_file?.files_url ? await FileFunctions.getFromS3(doctor.pan_card_file.files_url) : null
+    };
+
+    return h.response({ success: true, message: 'Doctor fetched successfully', data: doctor_data }).code(200);
+
+  } catch (err) {
+    console.error(err);
+    return h.response({ success: false, message: err.message }).code(500);
+  }
 };
+
 
 const fetch_popular_doctors = async (req, h) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
 
-        const popularDoctors = await Appointments.findAll({
-            where: { status: 'completed' },
-            attributes: [
-                'doctor_id',
-                [fn('COUNT', col('doctor_id')), 'completed_count']
-            ],
-            group: ['doctor_id'],
-            order: [[fn('COUNT', col('doctor_id')), 'DESC']],
-            limit: 10,
-            raw: true
-        });
+    const popularDoctors = await Appointments.findAll({
+      where: { status: 'completed' },
+      attributes: ['doctor_id', [fn('COUNT', col('doctor_id')), 'completed_count']],
+      group: ['doctor_id'],
+      order: [[fn('COUNT', col('doctor_id')), 'DESC']],
+      limit: 10,
+      raw: true
+    });
 
-        if (!popularDoctors.length) {
-            return h.response({
-                success: true,
-                message: 'No popular doctors found',
-                data: []
-            }).code(200);
-        }
-
-        const doctorIds = popularDoctors.map(d => d.doctor_id);
-
-        const doctors = await Doctors.findAll({
-            where: { id: { [Op.in]: doctorIds } },
-            include: [
-                { model: Files, as: 'profile_image', required: false }
-            ],
-            raw: true,
-            nest: true
-        });
-
-        const mapped = doctors.map(async (doc) => {
-            const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
-
-            return {
-                id: doc.id,
-                full_name: doc.full_name,
-                specialization: doc.specialization,
-                completed_appointments: count,
-                profile_image: doc.profile_image?.files_url
-                    ? await FileFunctions.getFromS3(doc.profile_image.files_url)
-                    : null
-            };
-        });
-
-        return h.response({
-            success: true,
-            message: 'Popular doctors fetched successfully',
-            data: await Promise.all(mapped)
-        }).code(200);
-
-    } catch (err) {
-        console.error('Error fetching popular doctors:', err);
-        return h.response({
-            success: false,
-            message: err.message
-        }).code(400);
+    if (!popularDoctors.length) {
+      return h.response({ success: true, message: 'No popular doctors found', data: [] }).code(200);
     }
+
+    const doctorIds = popularDoctors.map(d => d.doctor_id);
+
+    const doctors = await Doctors.findAll({
+      where: { id: { [Op.in]: doctorIds } },
+      include: [
+        { model: Files, as: 'profile_image', required: false },
+        { model: Files, as: 'registration_certificate', required: false },
+        { model: Files, as: 'medical_degree_certificate', required: false },
+        { model: Files, as: 'government_id_file', required: false },
+        { model: Files, as: 'pan_card_file', required: false },
+        { model: Adresses },
+        { model: Doctorsavailability }
+      ],
+      raw: true,
+      nest: true
+    });
+
+    const mapped = doctors.map(async (doc) => {
+      const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
+      return {
+        ...doc,
+        completed_appointments: count,
+        profile_image: doc.profile_image?.files_url ? await FileFunctions.getFromS3(doc.profile_image.files_url) : null,
+        registration_certificate: doc.registration_certificate?.files_url ? await FileFunctions.getFromS3(doc.registration_certificate.files_url) : null,
+        medical_degree_certificate: doc.medical_degree_certificate?.files_url ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url) : null,
+        government_id: doc.government_id_file?.files_url ? await FileFunctions.getFromS3(doc.government_id_file.files_url) : null,
+        pan_card: doc.pan_card_file?.files_url ? await FileFunctions.getFromS3(doc.pan_card_file.files_url) : null
+      };
+    });
+
+    return h.response({
+      success: true,
+      message: 'Popular doctors fetched successfully',
+      data: await Promise.all(mapped)
+    }).code(200);
+
+  } catch (err) {
+    console.error(err);
+    return h.response({ success: false, message: err.message }).code(400);
+  }
 };
+
 
 const fetch_popular_doctors_admin = async (req, h) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error('Session expired');
 
-        const popularDoctors = await Appointments.findAll({
-            where: { status: 'completed' },
-            attributes: [
-                'doctor_id',
-                [fn('COUNT', col('doctor_id')), 'completed_count']
-            ],
-            group: ['doctor_id'],
-            order: [[fn('COUNT', col('doctor_id')), 'DESC']],
-            raw: true
-        });
+    const popularDoctors = await Appointments.findAll({
+      where: { status: 'completed' },
+      attributes: [
+        'doctor_id',
+        [fn('COUNT', col('doctor_id')), 'completed_count']
+      ],
+      group: ['doctor_id'],
+      order: [[fn('COUNT', col('doctor_id')), 'DESC']],
+      raw: true
+    });
 
-        if (!popularDoctors.length) {
-            return h.response({
-                success: true,
-                message: 'No popular doctors found',
-                data: []
-            }).code(200);
-        }
-
-        const doctorIds = popularDoctors.map(d => d.doctor_id);
-
-        const doctors = await Doctors.findAll({
-            where: { id: { [Op.in]: doctorIds } },
-            include: [
-                { model: Files, as: 'profile_image', required: false },
-                { model: Files, as: 'registration_certificate', required: false },
-                { model: Files, as: 'medical_degree_certificate', required: false },
-                { model: Files, as: 'government_id_file', required: false },
-                { model: Files, as: 'pan_card_file', required: false },
-            ],
-            raw: true,
-            nest: true
-        });
-
-        const mapped = doctors.map(async (doc) => {
-            const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
-
-            return {
-                ...doc,
-                completed_appointments: count,
-
-                profile_image: doc.profile_image?.files_url
-                    ? await FileFunctions.getFromS3(doc.profile_image.files_url)
-                    : null,
-
-                registration_certificate: doc.registration_certificate?.files_url
-                    ? await FileFunctions.getFromS3(doc.registration_certificate.files_url)
-                    : null,
-
-                medical_degree_certificate: doc.medical_degree_certificate?.files_url
-                    ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url)
-                    : null,
-
-                government_id: doc.government_id_file?.files_url
-                    ? await FileFunctions.getFromS3(doc.government_id_file.files_url)
-                    : null,
-
-                pan_card: doc.pan_card_file?.files_url
-                    ? await FileFunctions.getFromS3(doc.pan_card_file.files_url)
-                    : null,
-            };
-        });
-
-        return h.response({
-            success: true,
-            message: 'Popular doctors (admin) fetched successfully',
-            data: await Promise.all(mapped)
-        }).code(200);
-
-    } catch (err) {
-        console.error('Error fetching popular doctors (admin):', err);
-        return h.response({
-            success: false,
-            message: err.message
-        }).code(500);
+    if (!popularDoctors.length) {
+      return h.response({
+        success: true,
+        message: 'No popular doctors found',
+        data: []
+      }).code(200);
     }
+
+    const doctorIds = popularDoctors.map(d => d.doctor_id);
+
+    const doctors = await Doctors.findAll({
+      where: { id: { [Op.in]: doctorIds } },
+      include: [
+        { model: Files, as: 'profile_image', attributes: ['files_url'], required: false },
+        { model: Files, as: 'registration_certificate', attributes: ['files_url'], required: false },
+        { model: Files, as: 'medical_degree_certificate', attributes: ['files_url'], required: false },
+        { model: Files, as: 'government_id_file', attributes: ['files_url'], required: false },
+        { model: Files, as: 'pan_card_file', attributes: ['files_url'], required: false },
+        { model: Adresses },
+        { model: Doctorsavailability }
+      ],
+      raw: true,
+      nest: true
+    });
+
+    // Map doctors and fetch images exactly like banner
+    const mapped = await Promise.all(
+      doctors.map(async (doc) => {
+        const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
+
+        return {
+          ...doc,
+          completed_appointments: count,
+
+          // ✅ Banner-style image fetching
+          profile_image: doc.profile_image?.files_url
+            ? await FileFunctions.getFromS3(doc.profile_image.files_url)
+            : null,
+
+          registration_certificate: doc.registration_certificate?.files_url
+            ? await FileFunctions.getFromS3(doc.registration_certificate.files_url)
+            : null,
+
+          medical_degree_certificate: doc.medical_degree_certificate?.files_url
+            ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url)
+            : null,
+
+          government_id: doc.government_id_file?.files_url
+            ? await FileFunctions.getFromS3(doc.government_id_file.files_url)
+            : null,
+
+          pan_card: doc.pan_card_file?.files_url
+            ? await FileFunctions.getFromS3(doc.pan_card_file.files_url)
+            : null
+        };
+      })
+    );
+
+    return h.response({
+      success: true,
+      message: 'Popular doctors (admin) fetched successfully',
+      data: mapped
+    }).code(200);
+
+  } catch (err) {
+    console.error('Error fetching popular doctors (admin):', err);
+    return h.response({
+      success: false,
+      message: err.message
+    }).code(500);
+  }
 };
+
 
 const updateDoctoreDetailsByAdmin = async (req, h) => {
     try {
