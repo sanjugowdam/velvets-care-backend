@@ -311,14 +311,12 @@ const updateStatus = async (req, h) => {
 const doctorlist_user = async (req, h) => {
   try {
     const session_user = req.headers.user;
-    if (!session_user) {
-      throw new Error('Session expired');
-    }
+    if (!session_user) throw new Error('Session expired');
 
     const rows = await Doctors.findAll({
       where: { verified: true },
       include: [
-        { model: Files, as: 'profile_image' },
+        { model: Files, as: 'profile_image', attributes: ['files_url'] },
         { model: Adresses },
         { model: Doctorsavailability }
       ],
@@ -331,21 +329,18 @@ const doctorlist_user = async (req, h) => {
     for (const row of rows) {
       const doctorId = row.id;
 
-      // First time doctor appears
       if (!doctorMap[doctorId]) {
-        // 🔹 Resolve profile image EXACTLY like banner
-        if (row.profile_image?.files_url) {
-          row.profile_image.files_url =
-            await FileFunctions.getFromS3(row.profile_image.files_url);
-        }
+        doctorMap[doctorId] = { ...row };
 
-        doctorMap[doctorId] = {
-          ...row,
-          doctorsavailabilities: []
-        };
+        // ✅ EXACT SAME AS BANNER IMAGE FETCH
+        doctorMap[doctorId].profile_image =
+          row.profile_image?.files_url
+            ? await FileFunctions.getFromS3(row.profile_image.files_url)
+            : null;
+
+        doctorMap[doctorId].doctorsavailabilities = [];
       }
 
-      // Push availability if exists
       if (row.doctorsavailabilities?.id) {
         doctorMap[doctorId].doctorsavailabilities.push(
           row.doctorsavailabilities
@@ -360,14 +355,13 @@ const doctorlist_user = async (req, h) => {
     }).code(200);
 
   } catch (error) {
-    console.error('Doctor list error:', error);
+    console.error(error);
     return h.response({
       success: false,
       message: error.message
     }).code(500);
   }
 };
-
 
 
 
