@@ -212,7 +212,7 @@ module.exports = [
     },
     {
         method: 'GET',
-        path: '/admin/doctor/slots',
+        path: '/admin/doctor/slots/{doctor_id}',
         options: {
             description: 'Get recommended doctors',
             tags,
