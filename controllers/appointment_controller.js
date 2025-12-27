@@ -147,19 +147,19 @@ const confirmAppointment = async (req, res) => {
 
 const getDoctorAppointments = async (req, res) => {
     try {
+
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
 
         const doctor_id = session_user.doctor_id;
         if (!doctor_id) throw new Error('Doctor ID is required');
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today
-
-        // Fetch all appointments for this doctor
         const appointments = await Appointments.findAll({
             where: { doctor_id },
-            include: [{ model: Users }],
+            include: [{
+                model: Users,
+                attributes: ['id', 'name', 'email', 'phone', 'profile_picture']
+            }],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
         });
 
@@ -172,37 +172,39 @@ const getDoctorAppointments = async (req, res) => {
             all: []
         };
 
+        const now = new Date();
+
         appointments.forEach(appt => {
+
             categorized.all.push(appt);
 
-            const apptDate = new Date(appt.appointment_date);
+            const apptDateTime = new Date(`${appt.appointment_date}T${appt.appointment_time}`);
             const status = appt.status?.toLowerCase();
 
-            switch (status) {
-                case 'completed':
-                    categorized.completed.push(appt);
-                    break;
-                case 'cancelled':
-                    categorized.cancelled.push(appt);
-                    break;
-                case 'pending':
-                    categorized.pending.push(appt);
-                    if (apptDate >= today) categorized.upcoming.push(appt);
-                    break;
-                case 'approved':
-                    categorized.approved.push(appt);
-                    if (apptDate >= today) categorized.upcoming.push(appt);
-                    break;
-                default:
-                    // For any other status, consider future appointments as upcoming
-                    if (apptDate >= today) categorized.upcoming.push(appt);
-                    break;
+            if (status === 'completed') {
+                categorized.completed.push(appt);
+            } 
+            else if (status === 'cancelled') {
+                categorized.cancelled.push(appt);
             }
+            else if (status === 'pending') {
+                categorized.pending.push(appt);
+                if (apptDateTime >= now) categorized.upcoming.push(appt);
+            }
+            else if (status === 'approved') {
+                categorized.approved.push(appt);
+                if (apptDateTime >= now) categorized.upcoming.push(appt);
+            }
+            else {
+                // unknown status → only treat future ones as upcoming
+                if (apptDateTime >= now) categorized.upcoming.push(appt);
+            }
+
         });
 
         return res.response({
             success: true,
-            message: 'Appointments fetched and categorized successfully',
+            message: 'Appointments fetched successfully',
             data: categorized
         }).code(200);
 
@@ -211,9 +213,10 @@ const getDoctorAppointments = async (req, res) => {
         return res.response({
             success: false,
             message: error.message || 'Failed to fetch appointments'
-        }).code(500);
+        })
     }
 };
+
 const DoctorApproval = async (req, h) => {
     try {
         const session_user = req.headers.user;
