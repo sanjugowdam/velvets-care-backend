@@ -185,9 +185,9 @@ const createAppointmentAdminValidator = Joi.object({
         'number.empty': 'Consultation fee is required',
         'any.required': 'Consultation fee is required',
     }),
-    consultation_modes: Joi.array().items(Joi.string()).required().messages({
-        'array.empty': 'Consultation modes are required',
-        'any.required': 'Consultation modes are required',
+    consultation_modes: Joi.string().required().messages({
+        'string.empty': 'Consultation modes is required',
+        'any.required': 'Consultation modes is required',
     }),
 });
 module.exports = {
