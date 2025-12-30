@@ -160,6 +160,36 @@ const UpdateAppointmentStatusParams = Joi.object({
         'any.required': 'Appointment ID is required',
     }),
 });
+const createAppointmentAdminValidator = Joi.object({
+    doctor_id: Joi.number().required().messages({
+        'number.empty': 'Doctor ID is required',
+        'any.required': 'Doctor ID is required',
+    }),
+    patient_id: Joi.number().required().messages({
+        'number.empty': 'Patient ID is required',
+        'any.required': 'Patient ID is required',
+    }),
+    appointment_date: Joi.string().required().messages({
+        'string.empty': 'Appointment date is required',
+        'any.required': 'Appointment date is required',
+    }),
+    appointment_time: Joi.string().required().messages({
+        'string.empty': 'Appointment time is required',
+        'any.required': 'Appointment time is required',
+    }),
+    reason: Joi.string().required().messages({
+        'string.empty': 'Reason is required',
+        'any.required': 'Reason is required',
+    }),
+    consultation_fee: Joi.number().required().messages({
+        'number.empty': 'Consultation fee is required',
+        'any.required': 'Consultation fee is required',
+    }),
+    consultation_modes: Joi.array().items(Joi.string()).required().messages({
+        'array.empty': 'Consultation modes are required',
+        'any.required': 'Consultation modes are required',
+    }),
+});
 module.exports = {
     appointmentValidator,
     razorpayPaymentValidator,
@@ -170,7 +200,6 @@ module.exports = {
     appointment,
     slotcheckingValidator,
     updateAppointmentStatusValidator,
-    UpdateAppointmentStatusParams
-
-    
+    UpdateAppointmentStatusParams,
+    createAppointmentAdminValidator
 }

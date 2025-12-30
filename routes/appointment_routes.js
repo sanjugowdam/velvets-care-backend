@@ -14,7 +14,9 @@ const {
     checkDoctorAvailability,
     getDoctorAvailableTimeSlots,
     getTodaysAppointmentsDoctor,
-    UpdateAppointmentStatus
+    UpdateAppointmentStatus,
+    adminCreateAppointmentWithPaymentLink
+    
 
     }
 } = require('../controllers');
@@ -28,7 +30,8 @@ const {
     appointment,
     slotcheckingValidator,
     UpdateAppointmentStatusParams,
-    updateAppointmentStatusValidator
+    updateAppointmentStatusValidator,
+    createAppointmentAdminValidator
     },
     HeaderValidator,
 } = require('../validators');
@@ -327,4 +330,47 @@ module.exports = [
 //     },
 //     handler: UpdateAppointmentStatus,
 // }
+
+{
+
+        method: 'POST',
+        path: '/admin/appointment/create-with-payment-link',
+        options: {
+            description: 'Create an appointment with payment link by admin',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                payload: createAppointmentAdminValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: adminCreateAppointmentWithPaymentLink,
+    },
+    {
+        method: 'POST',
+        path: '/admin/',
+        options: {
+            description: 'Cancel an appointment by admin',
+            tags,
+            pre: [
+                SessionValidator
+            ],
+            validate: {
+                headers: HeaderValidator,
+                params: appointment,
+                payload: cancelAppointmentValidator,
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
+            },
+        },
+        handler: adminCancelAppointment,
+    }
 ]

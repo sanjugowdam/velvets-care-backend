@@ -1123,6 +1123,21 @@ const adminCreateAppointmentWithPaymentLink = async (req, res) => {
 
         // 7️⃣ Create Razorpay Payment Link
         const amount = consultation_fee || doctor.consultation_fee || 500;
+             const appointment = await Appointments.create({
+            doctor_id,
+            patient_id,
+            appointment_date,
+            appointment_time,
+            reason,
+            status: 'pending',          // pending until payment
+            payment_id: null,
+            order_id: null,
+            payment_signature: null,
+            payment_status: 'pending',
+            consultation_fee: amount,
+            consultation_modes
+        });
+
         const paymentLink = await razorpay.paymentLink.create({
             amount: amount * 100, // in paise
             currency: 'INR',
@@ -1135,26 +1150,10 @@ const adminCreateAppointmentWithPaymentLink = async (req, res) => {
             },
             notify: { sms: true, email: true },
             reminder_enable: true,
-            callback_url: `${process.env.FRONTEND_URL}/payment/callback`,
-            callback_method: 'get'
+            callback_url: `${process.env.FRONTEND_URL}/payment/${appointment.id}/callback`,
         });
-
-        // 8️⃣ Create appointment record (pending payment)
-        const appointment = await Appointments.create({
-            doctor_id,
-            patient_id,
-            appointment_date,
-            appointment_time,
-            reason,
-            status: 'pending',          // pending until payment
-            payment_id: null,
-            order_id: paymentLink.id,
-            payment_signature: null,
-            payment_status: 'pending',
-            consultation_fee: amount,
-            consultation_modes
-        });
-
+            appointment.order_id = paymentLink.id;
+            await appointment.save();
         // 9️⃣ Return appointment + payment link
         return res.response({
             success: true,
