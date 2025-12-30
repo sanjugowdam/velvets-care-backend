@@ -1150,7 +1150,8 @@ const adminCreateAppointmentWithPaymentLink = async (req, res) => {
             },
             notify: { sms: true, email: true },
             reminder_enable: true,
-            callback_url: `${process.env.FRONTEND_URL}/payment/${appointment.id}/callback`,
+            callback_url: `${process.env.SERVICE_URL}/payment/${appointment.id}/callback`,
+            callback_method: 'get'
         });
             appointment.order_id = paymentLink.id;
             await appointment.save();

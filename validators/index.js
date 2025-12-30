@@ -27,6 +27,7 @@ module.exports = {
     DiscountedUserValidator: require('./discounteduser_validator'),
     DiscountedProductValidator: require('./discountedproduct_validator'),
     OrderValidator: require('./order_validator'),
+    DashboardValidator: require('./dashboard_validator'),
 
 
 }
