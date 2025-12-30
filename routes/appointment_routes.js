@@ -352,25 +352,25 @@ module.exports = [
         },
         handler: adminCreateAppointmentWithPaymentLink,
     },
-    {
-        method: 'POST',
-        path: '/admin/',
-        options: {
-            description: 'Cancel an appointment by admin',
-            tags,
-            pre: [
-                SessionValidator
-            ],
-            validate: {
-                headers: HeaderValidator,
-                params: appointment,
-                payload: cancelAppointmentValidator,
-                failAction: (request, h, err) => {
-                    const errors = err.details.map(e => e.message);
-                    throw Boom.badRequest(errors.join(', '));
-                }
-            },
-        },
-        handler: adminCancelAppointment,
-    }
+    // {
+    //     method: 'POST',
+    //     path: '/admin/',
+    //     options: {
+    //         description: 'Cancel an appointment by admin',
+    //         tags,
+    //         pre: [
+    //             SessionValidator
+    //         ],
+    //         validate: {
+    //             headers: HeaderValidator,
+    //             params: appointment,
+    //             payload: cancelAppointmentValidator,
+    //             failAction: (request, h, err) => {
+    //                 const errors = err.details.map(e => e.message);
+    //                 throw Boom.badRequest(errors.join(', '));
+    //             }
+    //         },
+    //     },
+    //     handler: adminCancelAppointment,
+    // }
 ]

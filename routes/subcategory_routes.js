@@ -1,28 +1,28 @@
 
 const {
     SessionValidator,
-    
+
 } = require('../middlewares')
 const Boom = require('@hapi/boom');
 // src/routes/authRoutes.js
 const {
     SubcategoryController: {
-    CreateSubCategory,
-  UpdateSubCategory,
-  DeleteSubCategory,
-  AdminSubCategories,
-  UserSubCategories,
-  GetSubCategoryById,
+        CreateSubCategory,
+        UpdateSubCategory,
+        DeleteSubCategory,
+        AdminSubCategories,
+        UserSubCategories,
+        GetSubCategoryById,
     }
 } = require('../controllers');
 const {
     SubCategoryValidator: {
-   createSubCategoryValidator,
-    updateSubCategoryValidator,
-    deleteSubCategoryValidator,
-    fetchAdminSubCategoryValidator,
-    fetchUserSubCategoryValidator,
-    fetchSingleSubCategoryValidator
+        createSubCategoryValidator,
+        updateSubCategoryValidator,
+        deleteSubCategoryValidator,
+        fetchAdminSubCategoryValidator,
+        fetchUserSubCategoryValidator,
+        fetchSingleSubCategoryValidator
 
     }
 } = require('../validators');
@@ -45,14 +45,14 @@ module.exports = [
                 payload: createSubCategoryValidator,
                 headers: HeaderValidator,
                 failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));   
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-            },
-            
+
         },
         handler: CreateSubCategory
-        },
+    },
     {
         method: 'PUT',
         path: '/subcategory/{id}',
@@ -66,12 +66,12 @@ module.exports = [
                 payload: updateSubCategoryValidator,
                 params: fetchSingleSubCategoryValidator,
                 headers: HeaderValidator,
-                 failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-            },
-           
+
         },
         handler: UpdateSubCategory
     },
@@ -87,16 +87,16 @@ module.exports = [
             validate: {
                 params: deleteSubCategoryValidator,
                 headers: HeaderValidator,
-                    failAction: (request, h, err) => {    
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
-                    }
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
             },
         },
         handler: DeleteSubCategory
     },
     {
-        method: 'GET',  
+        method: 'GET',
         path: '/subcategory/{id}',
         options: {
             description: 'Get a single subcategory',
@@ -127,12 +127,12 @@ module.exports = [
             validate: {
                 headers: HeaderValidator,
                 query: fetchAdminSubCategoryValidator,
-                  failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-            },
-          
+
         },
         handler: AdminSubCategories
     },
@@ -148,12 +148,12 @@ module.exports = [
             validate: {
                 headers: HeaderValidator,
                 query: fetchUserSubCategoryValidator,
-                   failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-            },
-         
+
         },
         handler: UserSubCategories
     },
