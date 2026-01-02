@@ -9,6 +9,7 @@ const {
 const {
     OTPFunctions, JWTFunctions, GoogleAuthFunctions
 } = require('../helpers')
+const fs = require('fs')
 
 const { TwilioFunctions, FileFunctions } = require('../helpers')
 const DEMO_OTP = '1234'

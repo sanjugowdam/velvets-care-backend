@@ -158,7 +158,6 @@ const getDoctorAppointments = async (req, res) => {
             where: { doctor_id },
             include: [{
                 model: Users,
-                attributes: ['id', 'name', 'email', 'phone', 'profile_picture']
             }],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
         });
