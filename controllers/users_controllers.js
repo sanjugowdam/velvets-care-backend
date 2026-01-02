@@ -302,9 +302,7 @@ const update_user = async (req, res) => {
     const updatedUser = await Users.findOne({
       where: { id: session_user.user_id },
       include: [{
-        model: Files,
-        as: 'profile_image',
-        attributes: ['files_url', 'original_name'],
+        model: Files,        attributes: ['files_url', 'original_name'],
         required: false
       }],
       raw: true,

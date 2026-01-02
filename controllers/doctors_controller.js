@@ -539,115 +539,62 @@ const fetch_single_doctor = async (req, h) => {
 const fetch_popular_doctors = async (req, h) => {
   try {
     const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
+    if (!session_user) throw new Error("Session expired");
 
     const popularDoctors = await Appointments.findAll({
-      where: { status: 'completed' },
-      attributes: ['doctor_id', [fn('COUNT', col('doctor_id')), 'completed_count']],
-      group: ['doctor_id'],
-      order: [[fn('COUNT', col('doctor_id')), 'DESC']],
-      limit: 10,
-      raw: true
-    });
-
-    if (!popularDoctors.length) {
-      return h.response({ success: true, message: 'No popular doctors found', data: [] }).code(200);
-    }
-
-    const doctorIds = popularDoctors.map(d => d.doctor_id);
-
-    const doctors = await Doctors.findAll({
-      where: { id: { [Op.in]: doctorIds } },
-      include: [
-        { model: Files, as: 'profile_image', required: false },
-        { model: Files, as: 'registration_certificate', required: false },
-        { model: Files, as: 'medical_degree_certificate', required: false },
-        { model: Files, as: 'government_id_file', required: false },
-        { model: Files, as: 'pan_card_file', required: false },
-        { model: Adresses },
-        { model: Doctorsavailability }
-      ],
-      raw: true,
-      nest: true
-    });
-
-    const mapped = doctors.map(async (doc) => {
-      const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
-      return {
-        ...doc,
-        completed_appointments: count,
-        profile_image: doc.profile_image?.files_url ? await FileFunctions.getFromS3(doc.profile_image.files_url) : null,
-        registration_certificate: doc.registration_certificate?.files_url ? await FileFunctions.getFromS3(doc.registration_certificate.files_url) : null,
-        medical_degree_certificate: doc.medical_degree_certificate?.files_url ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url) : null,
-        government_id: doc.government_id_file?.files_url ? await FileFunctions.getFromS3(doc.government_id_file.files_url) : null,
-        pan_card: doc.pan_card_file?.files_url ? await FileFunctions.getFromS3(doc.pan_card_file.files_url) : null
-      };
-    });
-
-    return h.response({
-      success: true,
-      message: 'Popular doctors fetched successfully',
-      data: await Promise.all(mapped)
-    }).code(200);
-
-  } catch (err) {
-    console.error(err);
-    return h.response({ success: false, message: err.message }).code(400);
-  }
-};
-
-
-const fetch_popular_doctors_admin = async (req, h) => {
-  try {
-    const session_user = req.headers.user;
-    if (!session_user) throw new Error('Session expired');
-
-    const popularDoctors = await Appointments.findAll({
-      where: { status: 'completed' },
+      where: { status: "completed" },
       attributes: [
-        'doctor_id',
-        [fn('COUNT', col('doctor_id')), 'completed_count']
+        "doctor_id",
+        [fn("COUNT", col("doctor_id")), "completed_count"]
       ],
-      group: ['doctor_id'],
-      order: [[fn('COUNT', col('doctor_id')), 'DESC']],
-      raw: true
+      group: ["doctor_id"],
+      order: [[fn("COUNT", col("doctor_id")), "DESC"]],
+      limit: 10,
+      raw: true,
     });
 
     if (!popularDoctors.length) {
       return h.response({
         success: true,
-        message: 'No popular doctors found',
-        data: []
-      }).code(200);
+        message: "No popular doctors found",
+        data: [],
+      });
     }
 
-    const doctorIds = popularDoctors.map(d => d.doctor_id);
+    const doctorIds = popularDoctors.map((d) => d.doctor_id);
 
     const doctors = await Doctors.findAll({
       where: { id: { [Op.in]: doctorIds } },
       include: [
-        { model: Files, as: 'profile_image', attributes: ['files_url'], required: false },
-        { model: Files, as: 'registration_certificate', attributes: ['files_url'], required: false },
-        { model: Files, as: 'medical_degree_certificate', attributes: ['files_url'], required: false },
-        { model: Files, as: 'government_id_file', attributes: ['files_url'], required: false },
-        { model: Files, as: 'pan_card_file', attributes: ['files_url'], required: false },
+        { model: Files, as: "profile_image", required: false },
+        { model: Files, as: "registration_certificate", required: false },
+        { model: Files, as: "medical_degree_certificate", required: false },
+        { model: Files, as: "government_id_file", required: false },
+        { model: Files, as: "pan_card_file", required: false },
         { model: Adresses },
         { model: Doctorsavailability }
       ],
-      raw: true,
-      nest: true
+      distinct: true,  // 🔥 avoids duplicates caused by joins
+      nest: true,
     });
 
-    // Map doctors and fetch images exactly like banner
-    const mapped = await Promise.all(
-      doctors.map(async (doc) => {
-        const count = popularDoctors.find(p => p.doctor_id === doc.id)?.completed_count || 0;
+    // Convert to map for quick lookup
+    const doctorsMap = {};
+    for (let d of doctors) {
+      doctorsMap[d.id] = d;
+    }
+
+    // Preserve sorted order based on completed count
+    const finalList = await Promise.all(
+      popularDoctors.map(async (pop) => {
+        const doc = doctorsMap[pop.doctor_id];
+        if (!doc) return null;
 
         return {
-          ...doc,
-          completed_appointments: count,
+          ...doc.toJSON(),
 
-          // ✅ Banner-style image fetching
+          completed_appointments: pop.completed_count,
+
           profile_image: doc.profile_image?.files_url
             ? await FileFunctions.getFromS3(doc.profile_image.files_url)
             : null,
@@ -666,25 +613,124 @@ const fetch_popular_doctors_admin = async (req, h) => {
 
           pan_card: doc.pan_card_file?.files_url
             ? await FileFunctions.getFromS3(doc.pan_card_file.files_url)
-            : null
+            : null,
         };
       })
     );
 
     return h.response({
       success: true,
-      message: 'Popular doctors (admin) fetched successfully',
-      data: mapped
-    }).code(200);
+      message: "Popular doctors fetched successfully",
+      data: finalList.filter(Boolean), // remove nulls
+    });
 
   } catch (err) {
-    console.error('Error fetching popular doctors (admin):', err);
-    return h.response({
-      success: false,
-      message: err.message
-    }).code(500);
+    console.error(err);
+    return h.response({ success: false, message: err.message }).code(400);
   }
 };
+
+
+const fetch_popular_doctors_admin = async (req, h) => {
+  try {
+    const session_user = req.headers.user;
+    if (!session_user) throw new Error("Session expired");
+
+    // STEP 1: Get popular doctors sorted
+    const popularDoctors = await Appointments.findAll({
+      where: { status: "completed" },
+      attributes: [
+        "doctor_id",
+        [fn("COUNT", col("doctor_id")), "completed_count"]
+      ],
+      group: ["doctor_id"],
+      order: [[fn("COUNT", col("doctor_id")), "DESC"]],
+      raw: true,
+    });
+
+    if (!popularDoctors.length) {
+      return h
+        .response({
+          success: true,
+          message: "No popular doctors found",
+          data: [],
+        })
+        .code(200);
+    }
+
+    const doctorIds = popularDoctors.map((d) => d.doctor_id);
+
+    // STEP 2: Fetch full doctor details without duplicates
+    const doctors = await Doctors.findAll({
+      where: { id: { [Op.in]: doctorIds } },
+      include: [
+        { model: Files, as: "profile_image", attributes: ["files_url"], required: false },
+        { model: Files, as: "registration_certificate", attributes: ["files_url"], required: false },
+        { model: Files, as: "medical_degree_certificate", attributes: ["files_url"], required: false },
+        { model: Files, as: "government_id_file", attributes: ["files_url"], required: false },
+        { model: Files, as: "pan_card_file", attributes: ["files_url"], required: false },
+        { model: Adresses },
+        { model: Doctorsavailability }
+      ],
+      distinct: true,      // 🔥 Prevents duplicate records
+      nest: true,
+    });
+
+    // ► Convert into map for fast lookup
+    const doctorMap = {};
+    for (const doc of doctors) {
+      doctorMap[doc.id] = doc;
+    }
+
+    // STEP 3: Build final output IN THE SAME SORT ORDER
+    const mapped = await Promise.all(
+      popularDoctors.map(async (pop) => {
+        const doc = doctorMap[pop.doctor_id];
+        if (!doc) return null;
+
+        const clean = doc.toJSON();
+
+        return {
+          ...clean,
+          completed_appointments: pop.completed_count,
+
+          profile_image: clean.profile_image?.files_url
+            ? await FileFunctions.getFromS3(clean.profile_image.files_url)
+            : null,
+
+          registration_certificate: clean.registration_certificate?.files_url
+            ? await FileFunctions.getFromS3(clean.registration_certificate.files_url)
+            : null,
+
+          medical_degree_certificate: clean.medical_degree_certificate?.files_url
+            ? await FileFunctions.getFromS3(clean.medical_degree_certificate.files_url)
+            : null,
+
+          government_id: clean.government_id_file?.files_url
+            ? await FileFunctions.getFromS3(clean.government_id_file.files_url)
+            : null,
+
+          pan_card: clean.pan_card_file?.files_url
+            ? await FileFunctions.getFromS3(clean.pan_card_file.files_url)
+            : null,
+        };
+      })
+    );
+
+    return h
+      .response({
+        success: true,
+        message: "Popular doctors (admin) fetched successfully",
+        data: mapped.filter(Boolean), // null check
+      })
+      .code(200);
+
+  } catch (err) {
+    console.error("Error fetching popular doctors (admin):", err);
+    return h.response({ success: false, message: err.message }).code(500);
+  }
+};
+
 
 
 const updateDoctoreDetailsByAdmin = async (req, h) => {
