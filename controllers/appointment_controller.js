@@ -158,8 +158,14 @@ const getDoctorAppointments = async (req, res) => {
             where: { doctor_id },
             include: [{
                 model: Users,
+                attributes: { exclude: ['access_token', 'refresh_token'] },
+                include: [{ model: Files }]
             }],
-            order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']]
+
+            order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
+            raw: true,
+            mapToModel: true,
+            nest: true
         });
 
         const categorized = {
@@ -173,30 +179,32 @@ const getDoctorAppointments = async (req, res) => {
 
         const now = new Date();
 
-        appointments.forEach(appt => {
+        appointments.forEach(async appt => {
 
             categorized.all.push(appt);
 
             const apptDateTime = new Date(`${appt.appointment_date}T${appt.appointment_time}`);
-            const status = appt.status?.toLowerCase();
+           const profile_images = appt.User?.file?.files_url ? await FileFunctions.getFromS3(appt.User.file.files_url) : null;
+
+           const status = appt.status?.toLowerCase();
 
             if (status === 'completed') {
-                categorized.completed.push(appt);
+                categorized.completed.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
             } 
             else if (status === 'cancelled') {
-                categorized.cancelled.push(appt);
+                categorized.cancelled.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
             }
             else if (status === 'pending') {
-                categorized.pending.push(appt);
-                if (apptDateTime >= now) categorized.upcoming.push(appt);
+                categorized.pending.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
+                if (apptDateTime >= now) categorized.upcoming.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
             }
             else if (status === 'approved') {
-                categorized.approved.push(appt);
-                if (apptDateTime >= now) categorized.upcoming.push(appt);
+                categorized.approved.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
+                if (apptDateTime >= now) categorized.upcoming.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
             }
             else {
                 // unknown status → only treat future ones as upcoming
-                if (apptDateTime >= now) categorized.upcoming.push(appt);
+                if (apptDateTime >= now) categorized.upcoming.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
             }
 
         });
