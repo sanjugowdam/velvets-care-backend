@@ -180,31 +180,31 @@ const getDoctorAppointments = async (req, res) => {
         const now = new Date();
 
         appointments.forEach(async appt => {
-
+            
             categorized.all.push(appt);
 
             const apptDateTime = new Date(`${appt.appointment_date}T${appt.appointment_time}`);
-           const profile_images = appt.User?.file?.files_url ? await FileFunctions.getFromS3(appt.User.file.files_url) : null;
+            const profile_images = appt.user?.file?.files_url ? await FileFunctions.getFromS3(appt.user.file.files_url) : null;
 
-           const status = appt.status?.toLowerCase();
+            const status = appt.status?.toLowerCase();
 
             if (status === 'completed') {
-                categorized.completed.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
-            } 
+                categorized.completed.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
+            }
             else if (status === 'cancelled') {
-                categorized.cancelled.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
+                categorized.cancelled.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
             }
             else if (status === 'pending') {
-                categorized.pending.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
-                if (apptDateTime >= now) categorized.upcoming.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
+                categorized.pending.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
+                if (apptDateTime >= now) categorized.upcoming.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
             }
             else if (status === 'approved') {
-                categorized.approved.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
-                if (apptDateTime >= now) categorized.upcoming.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
+                categorized.approved.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
+                if (apptDateTime >= now) categorized.upcoming.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
             }
             else {
                 // unknown status → only treat future ones as upcoming
-                if (apptDateTime >= now) categorized.upcoming.push({...appt, User: { ...appt.User, profile_image_url: profile_images } });
+                if (apptDateTime >= now) categorized.upcoming.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
             }
 
         });
@@ -242,7 +242,7 @@ const DoctorApproval = async (req, h) => {
             throw new Error(`Only pending appointments can be approved. Current status: ${appointment.status}`);
         }
         // Update status to approved
-       const updatedAppointment = await Appointments.update({
+        const updatedAppointment = await Appointments.update({
             status: 'approved'
         }, { where: { id: appointmentId } });
 
@@ -266,7 +266,7 @@ const UpdateAppointmentStatus = async (req, h) => {
         if (!session_user) throw new Error('Session expired');
 
         const doctor_id = session_user.doctor_id;
-       const {appointmentId} = req.params;
+        const { appointmentId } = req.params;
         const { status } = req.payload;
 
         const appointment = await Appointments.findByPk(appointmentId);
@@ -1038,9 +1038,9 @@ const adminGetTodaysAppointments = async (req, res) => {
         const formattedToday = `${(today.getMonth() + 1)
             .toString()
             .padStart(2, '0')}-${today
-            .getDate()
-            .toString()
-            .padStart(2, '0')}-${today.getFullYear()}`;
+                .getDate()
+                .toString()
+                .padStart(2, '0')}-${today.getFullYear()}`;
 
         const appointments = await Appointments.findAll({
             where: { doctor_id, appointment_date: formattedToday },
@@ -1130,7 +1130,7 @@ const adminCreateAppointmentWithPaymentLink = async (req, res) => {
 
         // 7️⃣ Create Razorpay Payment Link
         const amount = consultation_fee || doctor.consultation_fee || 500;
-             const appointment = await Appointments.create({
+        const appointment = await Appointments.create({
             doctor_id,
             patient_id,
             appointment_date,
@@ -1160,8 +1160,8 @@ const adminCreateAppointmentWithPaymentLink = async (req, res) => {
             callback_url: `${process.env.SERVICE_URL}/payment/${appointment.id}/callback`,
             callback_method: 'get'
         });
-            appointment.order_id = paymentLink.id;
-            await appointment.save();
+        appointment.order_id = paymentLink.id;
+        await appointment.save();
         // 9️⃣ Return appointment + payment link
         return res.response({
             success: true,
