@@ -302,11 +302,12 @@ const update_user = async (req, res) => {
     const updatedUser = await Users.findOne({
       where: { id: session_user.user_id },
       include: [{
-        model: Files,        attributes: ['files_url', 'original_name'],
+        model: Files,
         required: false
       }],
       raw: true,
-      nest: true
+      nest: true,
+      mapToModel: true
     });
 
     // Map S3 URL
@@ -509,10 +510,10 @@ const getuserData = async (request, h) => {
             where: { id: session_user.user_id },
             attributes: ['id', 'name', 'phone', 'email', 'dob', 'profile_image_id'],
             include: [{
-                model: Files,
-                attributes: ['files_url', 'original_name']
-            }],
-            raw: true
+                model: Files,            }],
+            raw: true,
+            nest: true,
+            mapToModel: true
         });
         if (!user) {
             throw new Error('User not found');
@@ -520,7 +521,10 @@ const getuserData = async (request, h) => {
         return h.response({
             success: true,
             message: 'User data fetched successfully',
-            data: user
+            data: {
+                ...user,
+                profile_image: user.file?.files_url ? await FileFunctions.getFromS3(user.file.files_url) : null
+            }
         }).code(200);
     } catch (error) {
         console.error(error);
