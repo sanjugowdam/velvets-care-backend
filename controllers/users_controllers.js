@@ -280,7 +280,7 @@ const update_user = async (req, res) => {
 
       // Save file record in DB
       const fileRecord = await Files.create({
-        file_url: uploadedFile.key,
+        files_url: uploadedFile.key,
         extension: uploadedFile.key.split('.').pop(),
         original_name: uploadedFile.key,
         size: fs.statSync(profile_image.path).size
@@ -452,7 +452,7 @@ const googleSignIn = async (request, h) => {
             const uploadedImage = await FileFunctions.uploadFile(req, image, profileImage);
 
             const file = await Files.create({
-                file_url: uploadedImage.file_url,
+                files_url: uploadedImage.file_url,
                 extension: uploadedImage.extension,
                 original_name: uploadedImage.original_name,
                 size: uploadedImage.size
@@ -557,7 +557,7 @@ const CreateUserByAdmin = async (req, res) => {
 
       // Save file record in DB
       const fileRecord = await Files.create({
-        file_url: uploadedFile.key,
+        files_url: uploadedFile.key,
         extension: uploadedFile.key.split('.').pop(),
         original_name: uploadedFile.key,
         size: fs.statSync(profile_image.path).size
