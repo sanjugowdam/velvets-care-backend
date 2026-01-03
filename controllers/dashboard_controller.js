@@ -1,5 +1,6 @@
 // dashboard.controller.js
-const { Users, Doctors, Appointments } = require('../models');
+const { default: payments } = require('razorpay/dist/types/payments');
+const { Users, Doctors, Appointments, Payments } = require('../models');
 const { Op } = require('sequelize');
 const Sequelize = require('sequelize');
 
@@ -40,7 +41,7 @@ const getDashboardStats = async (req, res) => {
         });
 
         // 6. Total Payout Amount
-        const payoutAmount = await Appointments.sum('payout_amount', {
+        const payoutAmount = await Payments.sum('amount', {
             where: { createdAt: { [Op.between]: [start, end] } }
         }) || 0;
 

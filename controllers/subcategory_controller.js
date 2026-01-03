@@ -89,6 +89,8 @@ const AdminSubCategories = async (req, res) => {
     const where = {};
     if (search) where.name = { [Op.like]: `%${search}%` };
 
+    const count = await Subcategories.count({ where });
+
     const subcategories = await Subcategories.findAll({
       where,
       include: [{ model: Categories }],
@@ -99,7 +101,12 @@ const AdminSubCategories = async (req, res) => {
     return res.response({
       success: true,
       message: 'Subcategories fetched successfully',
-      data: subcategories,
+      data: {
+        subcategories,
+        total: count,
+        page,
+        pages: Math.ceil(count / limit),
+      },
     });
   } catch (error) {
     console.error('Error fetching subcategories:', error);
