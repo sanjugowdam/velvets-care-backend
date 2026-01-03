@@ -1,6 +1,8 @@
 // dashboard.controller.js
 const { Users, Doctors, Appointments } = require('../models');
 const { Op } = require('sequelize');
+const Sequelize = require('sequelize');
+
 
 const getDashboardStats = async (req, res) => {
     try {
@@ -25,7 +27,7 @@ const getDashboardStats = async (req, res) => {
         });
 
         // 3. Total Booking Amount
-        const bookingAmount = await Appointments.sum('consultation_fee', {
+        const bookingAmount = await Appointments.sum('cunsultation_fee', {
             where: { createdAt: { [Op.between]: [start, end] } }
         }) || 0;
 
