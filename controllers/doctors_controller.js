@@ -424,6 +424,7 @@ const doctorlist = async (req, h) => {
       ],
       raw: true,
       nest: true,
+      mapToModel: true,
       order: [['createdAt', 'DESC']]
     });
 
