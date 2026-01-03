@@ -20,4 +20,5 @@ module.exports = [
     ...require('./discountedusers_routes'),
     ...require('./discountedproducts_routes'),
     ...require('./order_routes'),
+    ...require('./dashboard_routes'),
 ]
