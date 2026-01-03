@@ -75,8 +75,8 @@ const getYearlyDashboardStats = async (req, res) => {
                 [Sequelize.fn("MONTH", Sequelize.col("createdAt")), "month"],
                 [Sequelize.fn("COUNT", Sequelize.col("id")), "booking_count"],
                 [Sequelize.fn("COUNT", Sequelize.col("patient_id")), "patient_count"],
-                [Sequelize.fn("SUM", Sequelize.col("consultation_fee")), "total_amount"],
-                [Sequelize.literal("SUM(consultation_fee * 0.20)"), "commission_amount"],
+                [Sequelize.fn("SUM", Sequelize.col("cunsultation_fee")), "total_amount"],
+                [Sequelize.literal("SUM(cunsultation_fee * 0.20)"), "commission_amount"],
                 [Sequelize.fn("SUM", Sequelize.col("payout_amount")), "payout_amount"],
             ],
             where: Sequelize.where(
