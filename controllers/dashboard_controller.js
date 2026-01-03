@@ -1,5 +1,4 @@
 // dashboard.controller.js
-const { default: payments } = require('razorpay/dist/types/payments');
 const { Users, Doctors, Appointments, Payments } = require('../models');
 const { Op } = require('sequelize');
 const Sequelize = require('sequelize');
