@@ -37,10 +37,10 @@ const update_user_profile = Joi.object({
         'string.empty': 'Phone number is required',
         'any.required': 'Phone number is required',
     }),
-    // email: Joi.string().allow(null).messages({
-    //     'string.empty': 'Email is required',
-    //     'any.required': 'Email is required',
-    // }),
+    email: Joi.string().allow(null).messages({
+        'string.empty': 'Email is required',
+        'any.required': 'Email is required',
+    }),
     gender: Joi.string().allow(null).messages({
         'string.empty': 'Gender is required',
         'any.required': 'Gender is required',

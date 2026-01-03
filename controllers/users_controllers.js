@@ -263,7 +263,7 @@ const update_user = async (req, res) => {
     const session_user = req.headers.user;
     if (!session_user) throw new Error('Session expired');
 
-    const { name, phone, gender, profile_image, dob } = req.payload;
+    const { name, phone, gender, profile_image, dob, email } = req.payload;
 
     const user = await Users.findOne({ where: { id: session_user.user_id } });
     if (!user) throw new Error('User not found');
@@ -295,6 +295,7 @@ const update_user = async (req, res) => {
       phone,
       gender,
       dob,
+      email,
       profile_image_id: profileFileId
     }, { where: { id: session_user.user_id } });
 
@@ -408,7 +409,8 @@ const getusers = async (req, res) => {
         required: false
       }],
       raw: true,
-      nest: true
+      nest: true,
+        mapToModel: true
     });
 
     // Map S3 URLs for profile images
