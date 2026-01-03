@@ -386,7 +386,6 @@ const doctorlist_user = async (req, h) => {
 
 
 
-
 const doctorlist = async (req, h) => {
   try {
     const session_user = req.headers.user;
@@ -394,6 +393,7 @@ const doctorlist = async (req, h) => {
 
     const { specialization, years_of_experience, searchquery, page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
+
     let filter = {};
 
     if (searchquery) {
@@ -413,8 +413,8 @@ const doctorlist = async (req, h) => {
       limit: Number(limit),
       offset,
       include: [
-        { model: Adresses },
-        { model: Doctorsavailability },
+        { model: Adresses },                 // ✅ now returns array
+        { model: Doctorsavailability },      // ✅ now returns array
 
         { model: Files, as: 'profile_image', required: false },
         { model: Files, as: 'registration_certificate', required: false },
@@ -422,35 +422,35 @@ const doctorlist = async (req, h) => {
         { model: Files, as: 'government_id_file', required: false },
         { model: Files, as: 'pan_card_file', required: false },
       ],
-      raw: true,
-      nest: true,
-      mapToModel: true,
       order: [['createdAt', 'DESC']]
     });
 
-    // Map doctors and fetch all images exactly like banner
+    // Process images like banner
     const mapped_doctors = await Promise.all(
       doctors.map(async (doc) => {
+        const json = doc.toJSON();
+
         return {
-          ...doc,
-          profile_image: doc.profile_image?.files_url
-            ? await FileFunctions.getFromS3(doc.profile_image.files_url)
+          ...json,
+
+          profile_image: json.profile_image?.files_url
+            ? await FileFunctions.getFromS3(json.profile_image.files_url)
             : null,
 
-          registration_certificate: doc.registration_certificate?.files_url
-            ? await FileFunctions.getFromS3(doc.registration_certificate.files_url)
+          registration_certificate: json.registration_certificate?.files_url
+            ? await FileFunctions.getFromS3(json.registration_certificate.files_url)
             : null,
 
-          medical_degree_certificate: doc.medical_degree_certificate?.files_url
-            ? await FileFunctions.getFromS3(doc.medical_degree_certificate.files_url)
+          medical_degree_certificate: json.medical_degree_certificate?.files_url
+            ? await FileFunctions.getFromS3(json.medical_degree_certificate.files_url)
             : null,
 
-          government_id: doc.government_id_file?.files_url
-            ? await FileFunctions.getFromS3(doc.government_id_file.files_url)
+          government_id: json.government_id_file?.files_url
+            ? await FileFunctions.getFromS3(json.government_id_file.files_url)
             : null,
 
-          pan_card: doc.pan_card_file?.files_url
-            ? await FileFunctions.getFromS3(doc.pan_card_file.files_url)
+          pan_card: json.pan_card_file?.files_url
+            ? await FileFunctions.getFromS3(json.pan_card_file.files_url)
             : null
         };
       })
