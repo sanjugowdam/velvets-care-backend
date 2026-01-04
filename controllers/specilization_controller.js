@@ -1,67 +1,68 @@
+const { Op } = require('sequelize');
+const { FileFunctions } = require('../helpers');
+const { Specialization, Files, Doctors } = require('../models');
+const fs = require('fs');
 
-const {
-    Op,
-    where
-} = require('sequelize')
-const {
-    OTPFunctions, JWTFunctions
-} = require('../helpers')
-
-const { TwilioFunctions, FileFunctions } = require('../helpers');
-const { Doctors, Specialization, Files } = require('../models');
-const { TrunkPage } = require('twilio/lib/rest/trunking/v1/trunk');
-
+// ======================================================
+// CREATE SPECIALIZATION
+// ======================================================
 const createSpecialization = async (req, res) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+        if (!session_user) throw new Error('Session expired');
+
         const { name, icon } = req.payload;
-        if (!name) {
-            throw new Error('Specialization name is required');
-        }
-        // make file optional
-        let iconStore;
+        if (!name) throw new Error('Specialization name is required');
+
+        let iconStore = null;
+
+        // Upload icon if provided
         if (icon) {
-            const iconpath = 'uploads/specialization-icons/';
-            const iconFile = await FileFunctions.uploadFile(icon, 'icon/', iconpath);
+            const upload = await FileFunctions.uploadToS3(
+                icon.filename,
+                'uploads/specialization',
+                fs.readFileSync(icon.path)
+            );
+
             iconStore = await Files.create({
-                files_url: iconFile.file_url,
-                extension: iconFile.extension,
-                original_name: iconFile.original_name,
-                size: iconFile.size
+                files_url: upload.key,
+                extension: upload.key.split('.').pop(),
+                original_name: upload.key,
+                size: fs.statSync(icon.path).size
             });
         }
+
         const specialization = await Specialization.create({
             name,
-            icon_id: iconStore?.id
+            icon_id: iconStore?.id || null
         });
+
         return res.response({
-            success: 'true',
+            success: true,
             message: 'Specialization created successfully',
             data: specialization
         });
     } catch (error) {
         console.error('Error creating specialization:', error);
         return res.response({
-            success: 'false',
-            message: `Error creating specialization: ${error.message}`
+            success: false,
+            message: error.message
         });
     }
-}
+};
 
+// ======================================================
+// ADMIN — GET ALL SPECIALIZATIONS
+// ======================================================
 const getAllSpecializationsAdmin = async (req, res) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+        if (!session_user) throw new Error('Session expired');
 
-        const { page, limit, search } = req.query;
+        const { page = 1, limit = 10, search } = req.query;
 
-        const pageNum = parseInt(page) || 1;
-        const limitNum = parseInt(limit) || 10;
+        const pageNum = Number(page);
+        const limitNum = Number(limit);
         const offset = (pageNum - 1) * limitNum;
 
         let filter = {};
@@ -69,189 +70,200 @@ const getAllSpecializationsAdmin = async (req, res) => {
             filter.name = { [Op.like]: `%${search}%` };
         }
 
-        const specializationslist = await Specialization.findAll({
-            include: [{
-                model: Files,
-            }, {
-                model: Doctors
-            }],
+        const specializations = await Specialization.findAll({
+            include: [
+                { model: Files },
+                { model: Doctors }
+            ],
             where: filter,
-            offset,
             limit: limitNum,
+            offset: offset,
             raw: true,
-            mapToModel: true,
-            nest: TrunkPage
-        });
-        const total = await Specialization.count({
-            where: filter,
+            nest: true
         });
 
+        const total = await Specialization.count({ where: filter });
 
+        const mapped = await Promise.all(
+            specializations.map(async (item) => ({
+                id: item.id,
+                name: item.name,
+                icon_id: item.icon_id,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                image: item.file?.files_url
+                    ? await FileFunctions.getFromS3(item.file.files_url)
+                    : null,
+                doctorCount: item.doctors?.id ? 1 : 0
+            }))
+        );
 
         return res.response({
             success: true,
             message: 'Specializations fetched successfully',
             data: {
-                specialization: specializationslist.map(e => {
-                    return {
-                        id: e.id,
-                        name: e.name,
-                        icon_id: e.icon_id,
-                        createdAt: e.createdAt,
-                        updatedAt: e.updatedAt,
-                        deletedAt: e.deletedAt,
-                        file: e.file ? FileFunctions.getFileUrl(e.file.files_url) : null,
-                        doctorCount: e.doctors.length
-                    }
-                }),
+                specialization: mapped,
                 total
             }
         });
-
     } catch (error) {
         console.error('Error fetching specializations:', error);
         return res.response({
             success: false,
-            message: `Error fetching specializations: ${error.message}`
+            message: error.message
         });
     }
 };
 
+// ======================================================
+// USERS — GET ALL SPECIALIZATIONS
+// ======================================================
+const getspecilaizationsUsers = async (req, res) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) throw new Error('Session expired');
 
+        const specialization = await Specialization.findAll({
+            include: [{ model: Files }]
+        });
+
+        const mapped = await Promise.all(
+            specialization.map(async (item) => ({
+                id: item.id,
+                name: item.name,
+                icon_id: item.icon_id,
+                image: item.file?.files_url
+                    ? await FileFunctions.getFromS3(item.file.files_url)
+                    : null
+            }))
+        );
+
+        return res.response({
+            success: true,
+            message: 'Specializations fetched successfully',
+            data: mapped
+        });
+    } catch (error) {
+        console.error('Error fetching specialization:', error);
+        return res.response({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// ======================================================
+// GET DOCTORS BY SPECIALIZATION
+// ======================================================
 const getdoctorsbasedonspecialization = async (req, res) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+        if (!session_user) throw new Error('Session expired');
+
         const { id } = req.query;
-        if (!id) {
-            throw new Error('Specialization ID is required');
-        }
+        if (!id) throw new Error('Specialization ID is required');
+
         const doctors = await Doctors.findAll({
-            where: {
-                specialization_id: id,
-            },
-            include: [{
-                model: Files,
-                as: 'profile_image_file'
-            },]
+            where: { specialization_id: id },
+            include: [
+                { model: Files, as: 'profile_image_file' }
+            ]
         });
+
         return res.response({
-            success: 'true',
+            success: true,
             message: 'Doctors fetched successfully',
             data: doctors
         });
     } catch (error) {
         console.error('Error fetching doctors:', error);
         return res.response({
-            success: 'false',
-            message: `Error fetching doctors: ${error.message}`
+            success: false,
+            message: error.message
         });
     }
-}
+};
 
-const getspecilaizationsUsers = async (req, res) => {
-    try {
-        const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
-        const specialization = await Specialization.findAll({
-            include: [{
-                model: Files,
-            }],
-        });
-        if (!specialization) {
-            throw new Error('Specialization not found');
-        }
-        return res.response({
-            success: 'true',
-            message: 'specialization fetched successfully',
-            data: specialization
-        });
-    } catch (error) {
-        console.error('Error fetching specialization:', error);
-        return res.response({
-            success: 'false',
-            message: `Error fetching specialization: ${error.message}`
-        });
-    }
-}
-
+// ======================================================
+// DELETE SPECIALIZATION
+// ======================================================
 const deleteSpecialization = async (req, res) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+        if (!session_user) throw new Error('Session expired');
+
         const { id } = req.params;
-        if (!id) {
-            throw new Error('Specialization ID is required');
-        }
+        if (!id) throw new Error('Specialization ID is required');
+
         const specialization = await Specialization.findOne({ where: { id } });
-        if (!specialization) {
-            throw new Error('Specialization not found');
-        }
+        if (!specialization) throw new Error('Specialization not found');
+
         await specialization.destroy();
+
         return res.response({
-            success: 'true',
+            success: true,
             message: 'Specialization deleted successfully'
         });
     } catch (error) {
         console.error('Error deleting specialization:', error);
         return res.response({
-            success: 'false',
-            message: `Error deleting specialization: ${error.message}`
+            success: false,
+            message: error.message
         });
     }
-}
+};
+
+// ======================================================
+// UPDATE SPECIALIZATION
+// ======================================================
 const updateSpecialization = async (req, res) => {
     try {
         const session_user = req.headers.user;
-        if (!session_user) {
-            throw new Error('Session expired');
-        }
+        if (!session_user) throw new Error('Session expired');
+
         const { id, name, icon } = req.payload;
-        if (!id || !name) {
-            throw new Error('Specialization ID and name are required');
-        }
-        let specialization = await Specialization.findOne({ where: { id } });
-        if (!specialization) {
-            throw new Error('Specialization not found');
-        }
+        if (!id || !name) throw new Error('Specialization ID and name are required');
+
+        const specialization = await Specialization.findOne({ where: { id } });
+        if (!specialization) throw new Error('Specialization not found');
+
+        let icon_id = specialization.icon_id;
+
         if (icon) {
-            const iconpath = 'uploads/specialization-icons/';
-            const iconFile = await FileFunctions.uploadFile(icon, 'icon/', iconpath);
-            const iconStore = await Files.create({
-                files_url: iconFile.file_url,
-                extension: iconFile.extension,
-                original_name: iconFile.original_name,
-                size: iconFile.size
+            const upload = await FileFunctions.uploadToS3(
+                icon.filename,
+                'uploads/specialization',
+                fs.readFileSync(icon.path)
+            );
+
+            const fileRecord = await Files.create({
+                files_url: upload.key,
+                extension: upload.key.split('.').pop(),
+                original_name: upload.key,
+                size: fs.statSync(icon.path).size
             });
-            specialization.icon_id = iconStore.id;
+
+            icon_id = fileRecord.id;
         }
-        const updatedData = await Specialization.update({
-            name,
-            icon_id: specialization.icon_id
-        }, {
-            where: {
-                id: specialization.id
-            }
-        });
+
+        await Specialization.update(
+            { name, icon_id },
+            { where: { id } }
+        );
+
         return res.response({
-            success: 'true',
-            message: 'Specialization updated successfully',
-            data: updatedData
+            success: true,
+            message: 'Specialization updated successfully'
         });
     } catch (error) {
         console.error('Error updating specialization:', error);
         return res.response({
-            success: 'false',
-            message: `Error updating specialization: ${error.message}`
+            success: false,
+            message: error.message
         });
     }
-}
+};
+
 module.exports = {
     createSpecialization,
     getAllSpecializationsAdmin,
@@ -259,4 +271,4 @@ module.exports = {
     getspecilaizationsUsers,
     updateSpecialization,
     deleteSpecialization
-}
+};

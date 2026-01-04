@@ -1,20 +1,35 @@
 const { Op } = require('sequelize');
-const { Brands } = require('../models');
-
+const { Brands, Files } = require('../models');
+const {
+    FileFunctions, JWTFunctions , 
+} = require('../helpers')
+const fs = require('fs')
 // Create Brand
 const CreateBrand = async (req, res) => {
   try {
     const session_user = req.headers.user;
     if (!session_user) throw new Error('Session expired');
 
-    const { name, slug, is_active } = req.payload;
+    const { name, slug, is_active, brand_image, description } = req.payload;
 
     const existing = await Brands.findOne({ where: { name } });
     if (existing) throw new Error('Brand already exists');
 
+
+
+    const uploadedImage = await FileFunctions.uploadToS3(brand_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
+    const uploaded_files = await Files.create({
+      files_url: uploadedImage.key,
+      extension: uploadedImage.key.split('.').pop(),
+      original_name: uploadedImage.key,
+      size: fs.statSync(brand_image.path).size
+    });
+
     const brand = await Brands.create({
       name,
       slug,
+      brand_image: uploaded_files.id,
+      description,
       is_active: is_active ?? true,
     });
 
@@ -36,12 +51,20 @@ const UpdateBrand = async (req, res) => {
     if (!session_user) throw new Error('Session expired');
 
     const brandId = req.params.id;
-    const { name, slug, is_active } = req.payload;
+    const { name, slug, is_active, brand_image, description } = req.payload;
 
     const brand = await Brands.findByPk(brandId);
     if (!brand) throw new Error('Brand not found');
 
-    await brand.update({ name, slug, is_active });
+    const uploadedImage = await FileFunctions.uploadToS3(brand_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
+    const uploaded_files = await Files.create({
+      files_url: uploadedImage.key,
+      extension: uploadedImage.key.split('.').pop(),
+      original_name: uploadedImage.key,
+      size: fs.statSync(brand_image.path).size
+            })
+
+    await brand.update({ name, slug, is_active, brand_image: uploaded_files.id, description });
 
     return res.response({
       success: true,
@@ -88,13 +111,37 @@ const AdminBrands = async (req, res) => {
     const where = {};
     if (search) where.name = { [Op.like]: `%${search}%` };
 
-    const brands = await Brands.findAll({ where, limit, offset });
+    const brands = await Brands.findAll({
+      include: [
+        {
+          model: Files,
+        },
+      ],
+      where, limit, offset });
 
-    return res.response({
-      success: true,
-      message: 'Brands fetched successfully',
-      data: brands,
-    });
+      const totalCount = await Brands.count({ where });
+
+      const brand_mapped = brands.map(async (brand) => {
+        return {
+          id: brand.id,
+          name: brand.name,
+          slug: brand.slug,
+          brand_image: brand.Files[0].files_url ? await FileFunctions.getFromS3(brand.Files[0].files_url) : null,
+          description: brand.description,
+          is_active: brand.is_active,
+        };
+      });
+
+      return res.response({
+        success: true,
+        message: 'Brands fetched successfully',
+        data: await Promise.all(brand_mapped),
+        meta: {
+          totalCount,
+          page,
+          limit,
+        },
+      });
   } catch (error) {
     console.error('Error fetching brands:', error);
     return res.response({ success: false, message: error.message });
@@ -104,11 +151,27 @@ const AdminBrands = async (req, res) => {
 // User Fetch Brands
 const UserBrands = async (req, res) => {
   try {
-    const brands = await Brands.findAll({ where: { is_active: true } });
-
+    const brands = await Brands.findAll({
+       where: { is_active: true },
+      include: [
+        {
+          model: Files,
+        },
+      ],
+      });
+  const brand_mapped = brands.map(async (brand) => {
+        return {
+          id: brand.id,
+          name: brand.name,
+          slug: brand.slug,
+          brand_image: brand.Files[0].files_url ? await FileFunctions.getFromS3(brand.Files[0].files_url) : null,
+          description: brand.description,
+          is_active: brand.is_active,
+        };
+      });
     return res.response({
       success: true,
-      data: brands,
+      data: await Promise.all(brand_mapped),
     });
   } catch (error) {
     console.error('Error fetching user brands:', error);
@@ -121,15 +184,23 @@ const GetBrandById = async (req, res) => {
   try {
     const brandId = req.params.id;
 
-    const brand = await Brands.findByPk(brandId);
-    if (!brand) throw new Error('Brand not found');
-
-    return res.response({
-      success: true,
-      data: brand,
+    const brand = await Brands.findByPk(brandId, {
+      include: [{ model: Files }],
     });
+    if (!brand) throw new Error("Brand not found");
+
+    const data = {
+      id: brand.id,
+      name: brand.name,
+      slug: brand.slug,
+      brand_image: brand.File?.files_url ? await FileFunctions.getFromS3(brand.File.files_url) : null,
+      description: brand.description,
+      is_active: brand.is_active,
+    };
+
+    return res.response({ success: true, data });
   } catch (error) {
-    console.error('Error fetching brand:', error);
+    console.error("Error fetching brand:", error);
     return res.response({ success: false, message: error.message });
   }
 };

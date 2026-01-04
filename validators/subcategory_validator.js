@@ -8,6 +8,12 @@ const createSubCategoryValidator = Joi.object({
     category_id: Joi.number().integer().required().messages({
         'any.required': 'Category ID is required',
     }),
+    slug: Joi.string().optional(),
+    subcategory_image:Joi.any()
+                .meta({ swaggerType: 'file' })
+                .description('Subcategory image').messages({
+                  'any.required': 'Image is required',
+                }),
     description: Joi.string().allow('', null),
     is_active: Joi.boolean().default(true),
 });
@@ -15,6 +21,12 @@ const createSubCategoryValidator = Joi.object({
 const updateSubCategoryValidator = Joi.object({
     id: Joi.number().integer().required(),
     name: Joi.string().optional(),
+    slug: Joi.string().optional(),
+    subcategory_image:Joi.any()
+                .meta({ swaggerType: 'file' })
+                .description('Subcategory image').messages({
+                  'any.required': 'Image is required',
+                }),
     category_id: Joi.number().integer().optional(),
     description: Joi.string().allow('', null),
     is_active: Joi.boolean().optional(),

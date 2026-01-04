@@ -15,6 +15,8 @@ const{
   Category.init({
     name: DataTypes.STRING,
     slug: DataTypes.STRING,
+    description: DataTypes.TEXT,
+    category_image: DataTypes.INTEGER,
     is_active: DataTypes.BOOLEAN
   }, {
     sequelize,
