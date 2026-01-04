@@ -15,6 +15,8 @@ const{
   Brand.init({
     name: DataTypes.STRING,
     slug: DataTypes.STRING,
+    description: DataTypes.TEXT,
+    brand_image: DataTypes.INTEGER,
     is_active: DataTypes.BOOLEAN
   }, {
     sequelize,

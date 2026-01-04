@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { setDefaultHighWaterMark } = require('nodemailer/lib/xoauth2');
 
 const createCategoryValidator = Joi.object({
     name: Joi.string().required().messages({
@@ -6,6 +7,12 @@ const createCategoryValidator = Joi.object({
         'any.required': 'Category name is required',
     }),
     description: Joi.string().allow('', null),
+    slug: Joi.string().optional(),
+    category_image:Joi.any()
+                .meta({ swaggerType: 'file' })
+                .description('Pan card').messages({
+                  'any.required': 'Image is required',
+                }),
     is_active: Joi.boolean().default(true),
 });
 
@@ -15,6 +22,12 @@ const updateCategoryValidator = Joi.object({
     }),
     name: Joi.string().optional(),
     description: Joi.string().allow('', null),
+    slug: Joi.string().optional(),
+    category_image:Joi.any()
+                .meta({ swaggerType: 'file' })
+                .description('Category image').messages({
+                  'any.required': 'Image is required',
+                }),
     is_active: Joi.boolean().optional(),
 });
 

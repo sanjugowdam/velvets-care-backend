@@ -6,6 +6,12 @@ const createBrandValidator = Joi.object({
         'any.required': 'Brand name is required',
     }),
     description: Joi.string().allow('', null),
+    slug: Joi.string().optional(),
+    brand_image:Joi.any()
+                .meta({ swaggerType: 'file' })
+                .description('Brand image').messages({
+                  'any.required': 'Image is required',
+                }),
     is_active: Joi.boolean().default(true),
 });
 
@@ -13,6 +19,12 @@ const updateBrandValidator = Joi.object({
     id: Joi.number().integer().required(),
     name: Joi.string().optional(),
     description: Joi.string().allow('', null),
+    slug: Joi.string().optional(),
+    brand_image:Joi.any()
+                .meta({ swaggerType: 'file' })
+                .description('Brand image').messages({
+                  'any.required': 'Image is required',
+                }),
     is_active: Joi.boolean().optional(),
 });
 

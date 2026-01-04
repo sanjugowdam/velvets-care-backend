@@ -21,6 +21,7 @@ module.exports = {
       slug: {
         type: Sequelize.STRING
       },
+    
       is_active: {
         type: Sequelize.BOOLEAN
       },

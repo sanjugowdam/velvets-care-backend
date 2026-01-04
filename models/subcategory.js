@@ -19,6 +19,8 @@ SubCategory.init({
   name: DataTypes.STRING,
     slug: DataTypes.STRING,
     is_active: DataTypes.BOOLEAN,
+    description: DataTypes.TEXT,
+    subcategory_image: DataTypes.INTEGER,
     category_id: DataTypes.INTEGER
   }, {
     sequelize,

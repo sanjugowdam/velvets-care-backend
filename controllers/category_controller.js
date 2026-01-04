@@ -1,23 +1,33 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { Categories } = require('../models');
-
+const { Categories, Files } = require('../models');
+const {
+    FileFunctions, JWTFunctions , 
+} = require('../helpers')
 // Create Category
 const CreateCategory = async (req, res) => {
     try {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
 
-        const { name, description, is_active } = req.payload;
+        const { name, description, is_active,slug,category_image } = req.payload;
 
         const existing = await Categories.findOne({ where: { name } });
         if (existing) throw new Error('Category already exists');
-
+           const uploadedImage = await FileFunctions.uploadToS3(category_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
+              const uploaded_files = await Files.create({
+                files_url: uploadedImage.key,
+                extension: uploadedImage.key.split('.').pop(),
+                original_name: uploadedImage.key,
+                size: fs.statSync(category_image.path).size
+              });
         const category = await Categories.create({
             name,
             description: description || null,
             is_active: is_active ?? true,
+            slug,
+            category_image: uploaded_files.id
         });
 
         return res.response({
@@ -42,8 +52,14 @@ const UpdateCategory = async (req, res) => {
 
         const category = await Categories.findOne({ where: { id } });
         if (!category) throw new Error('Category not found');
-
-        await category.update(updates);
+           const uploadedImage = await FileFunctions.uploadToS3(category_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
+              const uploaded_files = await Files.create({
+                files_url: uploadedImage.key,
+                extension: uploadedImage.key.split('.').pop(),
+                original_name: uploadedImage.key,
+                size: fs.statSync(category_image.path).size
+              });
+        await category.update({ ...updates, category_image: uploaded_files.id });
 
         return res.response({
             success: true,
@@ -110,10 +126,27 @@ const AdminCategories = async (req, res) => {
         }
 
         const { rows, count } = await Categories.findAndCountAll({
+            include:[
+                {
+                    model: Files,
+                }
+            ],
             where,
             limit,
             offset,
         });
+
+       
+      const category_mapped = rows.map(async (category) => {
+        return {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          category_image: category.Files[0].files_url,
+          description: category.description,
+          is_active: category.is_active,
+        };
+      });
 
         return res.response({
             success: true,
@@ -121,7 +154,7 @@ const AdminCategories = async (req, res) => {
             total: count,
             page,
             limit,
-            data: rows,
+            data: await Promise.all(category_mapped),
         });
     } catch (error) {
         console.error('Error fetching admin categories:', error);
@@ -141,9 +174,25 @@ const UserCategories = async (req, res) => {
         }
 
         const { rows, count } = await Categories.findAndCountAll({
+            include:[
+                {
+                    model: Files,
+                }
+            ],
             where,
             limit,
             offset,
+        });
+
+        const category_mapped = rows.map(async (category) => {
+          return {
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            category_image: category.Files[0].files_url ? await FileFunctions.getFromS3(category.Files[0].files_url) : null,
+            description: category.description,
+            is_active: category.is_active,
+          };
         });
 
         return res.response({
@@ -152,7 +201,7 @@ const UserCategories = async (req, res) => {
             total: count,
             page,
             limit,
-            data: rows,
+            data: await Promise.all(category_mapped),
         });
     } catch (error) {
         console.error('Error fetching user categories:', error);

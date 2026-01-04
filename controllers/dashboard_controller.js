@@ -77,7 +77,7 @@ const getYearlyDashboardStats = async (req, res) => {
                 [Sequelize.fn("COUNT", Sequelize.col("patient_id")), "patient_count"],
                 [Sequelize.fn("SUM", Sequelize.col("cunsultation_fee")), "total_amount"],
                 [Sequelize.literal("SUM(cunsultation_fee * 0.20)"), "commission_amount"],
-                [Sequelize.fn("SUM", Sequelize.col("payout_amount")), "payout_amount"],
+                // [Sequelize.fn("SUM", Sequelize.col("payout_amount")), "payout_amount"],
             ],
             where: Sequelize.where(
                 Sequelize.fn("YEAR", Sequelize.col("createdAt")),
@@ -96,7 +96,7 @@ const getYearlyDashboardStats = async (req, res) => {
                 patient_count: found ? parseInt(found.patient_count) : 0,
                 total_amount: found ? parseFloat(found.total_amount) : 0,
                 commission_amount: found ? parseFloat(found.commission_amount) : 0,
-                payout_amount: found ? parseFloat(found.payout_amount) : 0
+                // payout_amount: found ? parseFloat(found.payout_amount) : 0
             };
         });
 
