@@ -12,6 +12,7 @@ const{
 } = require('../config');
 
 const Category = require('./category');
+const Files = require('./files');
 
 class SubCategory extends Model {
 }
@@ -30,5 +31,8 @@ SubCategory.init({
 
   SubCategory.belongsTo(Category, { foreignKey: 'category_id' });
   Category.hasMany(SubCategory, { foreignKey: 'category_id' });
+
+  SubCategory.belongsTo(Files, { foreignKey: 'subcategory_image' });
+  Files.hasMany(SubCategory, { foreignKey: 'subcategory_image' });
 
 module.exports = SubCategory;
