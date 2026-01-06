@@ -10,6 +10,7 @@ const{
   },
   sequelize
 } = require('../config');
+const Files = require('./files');
   class Category extends Model {
   }
   Category.init({
@@ -23,5 +24,8 @@ const{
     paranoid: true,
     modelName: Categories,
   });
- 
+
+  Category.belongsTo(Files, { foreignKey: 'category_image' });
+  Files.hasMany(Category, { foreignKey: 'category_image' });
+
 module.exports = Category;
