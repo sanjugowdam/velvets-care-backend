@@ -127,7 +127,7 @@ const AdminSubCategories = async (req, res) => {
         slug: subcategory.slug,
         category_id: subcategory.category_id,
         category_name: subcategory.Categories.name,
-        subcategory_image: subcategory.Files[0].files_url ? await FileFunctions.getFromS3(subcategory.Files[0].files_url) : null,
+        subcategory_image: subcategory.Files?.files_url ? await FileFunctions.getFromS3(subcategory.Files.files_url) : null,
         description: subcategory.description,
         is_active: subcategory.is_active,
       };
@@ -164,7 +164,7 @@ const UserSubCategories = async (req, res) => {
         slug: subcategory.slug,
         category_id: subcategory.category_id,
         category_name: subcategory.Categories.name,
-        subcategory_image: subcategory.Files[0].files_url ? await FileFunctions.getFromS3(subcategory.Files[0].files_url) : null,
+        subcategory_image: subcategory.Files?.files_url ? await FileFunctions.getFromS3(subcategory.Files.files_url) : null,
         description: subcategory.description,
         is_active: subcategory.is_active,
       };
