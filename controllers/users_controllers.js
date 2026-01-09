@@ -404,8 +404,6 @@ const getusers = async (req, res) => {
       offset: (page - 1) * limit,
       include: [{
         model: Files,
-        as: 'profile_image',
-        attributes: ['files_url', 'original_name'],
         required: false
       }],
       raw: true,
