@@ -142,7 +142,7 @@ const AdminCategories = async (req, res) => {
           id: category.id,
           name: category.name,
           slug: category.slug,
-          category_image: category.Files[0].files_url,
+          category_image: category.file?.files_url ? await FileFunctions.getFromS3(category.file.files_url) : null,
           description: category.description,
           is_active: category.is_active,
         };
@@ -189,7 +189,7 @@ const UserCategories = async (req, res) => {
             id: category.id,
             name: category.name,
             slug: category.slug,
-            category_image: category.Files[0].files_url ? await FileFunctions.getFromS3(category.Files[0].files_url) : null,
+            category_image: category.file?.files_url ? await FileFunctions.getFromS3(category.file.files_url) : null,
             description: category.description,
             is_active: category.is_active,
           };
