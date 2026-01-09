@@ -163,12 +163,22 @@ const getdoctorsbasedonspecialization = async (req, res) => {
         const { id } = req.query;
         if (!id) throw new Error('Specialization ID is required');
 
-        const doctors = await Doctors.findAll({
+        const doctors_data = await Doctors.findAll({
             where: { specialization_id: id },
             include: [
                 { model: Files, as: 'profile_image_file' }
             ]
         });
+            const doctors = await Promise.all(
+                doctors_data.map(async (doctor) => ({
+                    id: doctor.id,
+                    name: doctor.name,
+                    specialization_id: doctor.specialization_id,
+                    profile_image: doctor.profile_image_file?.files_url
+                        ? await FileFunctions.getFromS3(doctor.profile_image_file.files_url)
+                        : null
+                }))
+            );
 
         return res.response({
             success: true,
