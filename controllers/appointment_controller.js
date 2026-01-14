@@ -147,7 +147,6 @@ const confirmAppointment = async (req, res) => {
 
 const getDoctorAppointments = async (req, res) => {
     try {
-
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
 
@@ -156,12 +155,13 @@ const getDoctorAppointments = async (req, res) => {
 
         const appointments = await Appointments.findAll({
             where: { doctor_id },
-            include: [{
-                model: Users,
-                attributes: { exclude: ['access_token', 'refresh_token'] },
-                include: [{ model: Files }]
-            }],
-
+            include: [
+                {
+                    model: Users,
+                    attributes: { exclude: ['access_token', 'refresh_token'] },
+                    include: [{ model: Files }]
+                }
+            ],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
             raw: true,
             mapToModel: true,
@@ -169,44 +169,42 @@ const getDoctorAppointments = async (req, res) => {
         });
 
         const categorized = {
+            new: [],
             upcoming: [],
-            completed: [],
-            cancelled: [],
-            pending: [],
-            approved: [],
-            all: []
+            history: []
         };
 
-        const now = new Date();
+        const enrichedAppointments = await Promise.all(
+            appointments.map(async (appt) => {
+                const profile_image_url = appt.user?.file?.files_url
+                    ? await FileFunctions.getFromS3(appt.user.file.files_url)
+                    : null;
 
-        appointments.forEach(async appt => {
-            
-            categorized.all.push(appt);
+                return {
+                    ...appt,
+                    user: {
+                        ...appt.user,
+                        profile_image_url
+                    }
+                };
+            })
+        );
 
-            const apptDateTime = new Date(`${appt.appointment_date}T${appt.appointment_time}`);
-            const profile_images = appt.user?.file?.files_url ? await FileFunctions.getFromS3(appt.user.file.files_url) : null;
-
+        enrichedAppointments.forEach(appt => {
             const status = appt.status?.toLowerCase();
 
-            if (status === 'completed') {
-                categorized.completed.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
-            }
-            else if (status === 'cancelled') {
-                categorized.cancelled.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
-            }
-            else if (status === 'pending') {
-                categorized.pending.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
-                if (apptDateTime >= now) categorized.upcoming.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
-            }
-            else if (status === 'approved') {
-                categorized.approved.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
-                if (apptDateTime >= now) categorized.upcoming.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
-            }
-            else {
-                // unknown status → only treat future ones as upcoming
-                if (apptDateTime >= now) categorized.upcoming.push({ ...appt, user: { ...appt.user, profile_image_url: profile_images } });
+            // HISTORY → all appointments
+            categorized.history.push(appt);
+
+            // NEW → not approved
+            if (status !== 'approved') {
+                categorized.new.push(appt);
             }
 
+            // UPCOMING → approved
+            if (status === 'approved') {
+                categorized.upcoming.push(appt);
+            }
         });
 
         return res.response({
@@ -220,9 +218,10 @@ const getDoctorAppointments = async (req, res) => {
         return res.response({
             success: false,
             message: error.message || 'Failed to fetch appointments'
-        })
+        }).code(500);
     }
 };
+
 
 const DoctorApproval = async (req, h) => {
     try {
