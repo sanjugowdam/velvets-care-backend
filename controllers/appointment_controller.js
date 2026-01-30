@@ -145,7 +145,7 @@ const confirmAppointment = async (req, res) => {
 };
 
 
-const getDoctorAppointments = async (req, res) => {
+const getDoctorAppointments = async (req, h) => {
     try {
         const session_user = req.headers.user;
         if (!session_user) throw new Error('Session expired');
@@ -153,6 +153,9 @@ const getDoctorAppointments = async (req, res) => {
         const doctor_id = session_user.doctor_id;
         if (!doctor_id) throw new Error('Doctor ID is required');
 
+        /* -------------------------------
+           FETCH APPOINTMENTS
+        -------------------------------- */
         const appointments = await Appointments.findAll({
             where: { doctor_id },
             include: [
@@ -164,7 +167,6 @@ const getDoctorAppointments = async (req, res) => {
             ],
             order: [['appointment_date', 'ASC'], ['appointment_time', 'ASC']],
             raw: true,
-            mapToModel: true,
             nest: true
         });
 
@@ -174,53 +176,73 @@ const getDoctorAppointments = async (req, res) => {
             history: []
         };
 
-        const enrichedAppointments = await Promise.all(
-            appointments.map(async (appt) => {
-                const profile_image_url = appt.user?.file?.files_url
-                    ? await FileFunctions.getFromS3(appt.user.file.files_url)
-                    : null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-                return {
-                    ...appt,
-                    user: {
-                        ...appt.user,
-                        profile_image_url
-                    }
-                };
-            })
-        );
+        /* -------------------------------
+           ENRICH + CATEGORIZE
+        -------------------------------- */
+        for (const appt of appointments) {
 
-        enrichedAppointments.forEach(appt => {
-            const status = appt.status?.toLowerCase();
+            const profile_image_url = appt.user?.file?.files_url
+                ? await FileFunctions.getFromS3(appt.user.file.files_url)
+                : null;
 
-            // HISTORY → all appointments
-            categorized.history.push(appt);
+            const enriched = {
+                ...appt,
+                user: {
+                    ...appt.user,
+                    profile_image_url
+                }
+            };
 
-            // NEW → not approved
-            if (status !== 'approved') {
-                categorized.new.push(appt);
+            const apptDate = new Date(appt.appointment_date);
+            apptDate.setHours(0, 0, 0, 0);
+
+            const status = appt.status; // e.g. PENDING, APPROVED, COMPLETED, CANCELLED
+
+            /* -------------------------------
+               HISTORY
+               - Date crossed
+               - OR completed / cancelled
+            -------------------------------- */
+            if (
+                apptDate < today ||
+                ['COMPLETED', 'CANCELLED'].includes(status)
+            ) {
+                categorized.history.push(enriched);
+                continue;
             }
 
-            // UPCOMING → approved
-            if (status === 'approved') {
-                categorized.upcoming.push(appt);
+            /* -------------------------------
+               NEW (NOT APPROVED)
+            -------------------------------- */
+            if (status !== 'APPROVED') {
+                categorized.new.push(enriched);
+                continue;
             }
-        });
 
-        return res.response({
+            /* -------------------------------
+               UPCOMING (APPROVED + FUTURE/TODAY)
+            -------------------------------- */
+            categorized.upcoming.push(enriched);
+        }
+
+        return h.response({
             success: true,
-            message: 'Appointments fetched successfully',
+            message: 'Doctor appointments fetched successfully',
             data: categorized
         }).code(200);
 
     } catch (error) {
         console.error('Fetch doctor appointments error:', error);
-        return res.response({
+        return h.response({
             success: false,
             message: error.message || 'Failed to fetch appointments'
         }).code(500);
     }
 };
+
 
 
 const DoctorApproval = async (req, h) => {
