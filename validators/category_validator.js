@@ -17,9 +17,6 @@ const createCategoryValidator = Joi.object({
 });
 
 const updateCategoryValidator = Joi.object({
-    id: Joi.number().integer().required().messages({
-        'any.required': 'Category ID is required',
-    }),
     name: Joi.string().optional(),
     description: Joi.string().allow('', null),
     slug: Joi.string().optional(),
