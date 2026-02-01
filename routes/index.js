@@ -21,4 +21,5 @@ module.exports = [
     ...require('./discountedproducts_routes'),
     ...require('./order_routes'),
     ...require('./dashboard_routes'),
+    ...require('./prescription_routes')
 ]

@@ -21,4 +21,5 @@ module.exports = {
     OrderController: require('./order_controller'),
     FileController: require('./file_controller'),
     DashboardController: require('./dashboard_controller'),
+    PrescriptionController: require('./prescription_controller'),
 }

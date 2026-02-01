@@ -28,6 +28,7 @@ module.exports = {
     DiscountedProductValidator: require('./discountedproduct_validator'),
     OrderValidator: require('./order_validator'),
     DashboardValidator: require('./dashboard_validator'),
+    PrescriptionValidator: require('./prescription_validator'),
 
 
 }

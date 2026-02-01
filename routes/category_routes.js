@@ -1,29 +1,29 @@
 
 const {
     SessionValidator,
-    
+
 } = require('../middlewares')
 const Boom = require('@hapi/boom');
 // src/routes/authRoutes.js
 const {
     CategoryController: {
-     CreateCategory,
-    UpdateCategory,
-    DeleteCategory,
-    GetCategoryById,
-    AdminCategories,
-    UserCategories,
+        CreateCategory,
+        UpdateCategory,
+        DeleteCategory,
+        GetCategoryById,
+        AdminCategories,
+        UserCategories,
 
     }
 } = require('../controllers');
 const {
     CategoryValidator: {
-    createCategoryValidator,
-    updateCategoryValidator,
-    deleteCategoryValidator,
-    fetchAdminCategoryValidator,
-    fetchUserCategoryValidator,
-    fetchSingleCategoryValidator
+        createCategoryValidator,
+        updateCategoryValidator,
+        deleteCategoryValidator,
+        fetchAdminCategoryValidator,
+        fetchUserCategoryValidator,
+        fetchSingleCategoryValidator
 
     }
 } = require('../validators');
@@ -45,11 +45,11 @@ module.exports = [
             validate: {
                 payload: createCategoryValidator,
                 headers: HeaderValidator,
-            failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
-        },
-        },
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
+            },
         },
         handler: CreateCategory
     },
@@ -66,11 +66,11 @@ module.exports = [
                 payload: updateCategoryValidator,
                 params: fetchSingleCategoryValidator,
                 headers: HeaderValidator,
-            failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-        },
         },
         handler: UpdateCategory
     },
@@ -86,11 +86,11 @@ module.exports = [
             validate: {
                 params: deleteCategoryValidator,
                 headers: HeaderValidator,
-            failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-        },
         },
         handler: DeleteCategory
     },
@@ -106,11 +106,11 @@ module.exports = [
             validate: {
                 params: fetchSingleCategoryValidator,
                 headers: HeaderValidator,
-            failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-        },
         },
         handler: GetCategoryById
     },
@@ -126,11 +126,11 @@ module.exports = [
             validate: {
                 headers: HeaderValidator,
                 query: fetchUserCategoryValidator,
-            failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                },
             },
-        },
         },
         handler: UserCategories
     },
@@ -146,14 +146,14 @@ module.exports = [
             validate: {
                 headers: HeaderValidator,
                 query: fetchAdminCategoryValidator,
-                  failAction: (request, h, err) => {
-                const errors = err.details.map(e => e.message);
-                throw Boom.badRequest(errors.join(', '));
-            }
+                failAction: (request, h, err) => {
+                    const errors = err.details.map(e => e.message);
+                    throw Boom.badRequest(errors.join(', '));
+                }
             },
-          
+
         },
-        handler: AdminCategories 
+        handler: AdminCategories
     }
 ]
-          
+
