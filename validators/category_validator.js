@@ -10,7 +10,7 @@ const createCategoryValidator = Joi.object({
     slug: Joi.string().optional(),
     category_image:Joi.any()
                 .meta({ swaggerType: 'file' })
-                .description('Pan card').messages({
+                .description('category image').messages({
                   'any.required': 'Image is required',
                 }),
     is_active: Joi.boolean().default(true),

@@ -16,19 +16,20 @@ const CreateBrand = async (req, res) => {
     if (existing) throw new Error('Brand already exists');
 
 
-
+let uploaded_files = null;
+if(brand_image) {
     const uploadedImage = await FileFunctions.uploadToS3(brand_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
-    const uploaded_files = await Files.create({
+    uploaded_files = await Files.create({
       files_url: uploadedImage.key,
       extension: uploadedImage.key.split('.').pop(),
       original_name: uploadedImage.key,
       size: fs.statSync(brand_image.path).size
     });
-
+  }
     const brand = await Brands.create({
       name,
       slug,
-      brand_image: uploaded_files.id,
+      brand_image: uploaded_files ? uploaded_files.id : null,
       description,
       is_active: is_active ?? true,
     });
@@ -55,16 +56,19 @@ const UpdateBrand = async (req, res) => {
 
     const brand = await Brands.findByPk(brandId);
     if (!brand) throw new Error('Brand not found');
+    let uploaded_files = null;
+    if (brand_image) {
 
-    const uploadedImage = await FileFunctions.uploadToS3(brand_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
+     uploadedImage = await FileFunctions.uploadToS3(brand_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
     const uploaded_files = await Files.create({
       files_url: uploadedImage.key,
       extension: uploadedImage.key.split('.').pop(),
       original_name: uploadedImage.key,
       size: fs.statSync(brand_image.path).size
             })
+    }
 
-    await brand.update({ name, slug, is_active, brand_image: uploaded_files.id, description });
+    await brand.update({ name, slug, is_active, brand_image: uploaded_files ? uploaded_files.id : null, description });
 
     return res.response({
       success: true,
