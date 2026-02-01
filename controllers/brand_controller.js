@@ -68,7 +68,11 @@ const UpdateBrand = async (req, res) => {
             })
     }
 
-    await brand.update({ name, slug, is_active, brand_image: uploaded_files ? uploaded_files.id : null, description });
+    await brand.update({ name, slug, is_active, brand_image: uploaded_files ? uploaded_files.id : null, description },
+      {
+        where: { id: brandId },
+      }
+    );
 
     return res.response({
       success: true,

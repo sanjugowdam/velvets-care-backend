@@ -65,7 +65,12 @@ const UpdateCategory = async (req, res) => {
                 size: fs.statSync(category_image.path).size
               });
             }
-        await category.update({ ...updates, category_image: uploaded_files ? uploaded_files.id : null });
+        await category.update({ ...updates, category_image: uploaded_files ? uploaded_files.id : null },
+            {
+                where: { id },
+            },
+            
+        );
 
         return res.response({
             success: true,
