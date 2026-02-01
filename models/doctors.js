@@ -38,7 +38,8 @@ const Specialization = require('./specialization');
     verified: DataTypes.BOOLEAN,
     otp_id: DataTypes.INTEGER,
     access_token: DataTypes.STRING,
-    refresh_token: DataTypes.STRING
+    refresh_token: DataTypes.STRING,
+    fcm_token: DataTypes.TEXT,
   }, {
     sequelize,
     paranoid: true,
