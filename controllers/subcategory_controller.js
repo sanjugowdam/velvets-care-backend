@@ -122,6 +122,9 @@ const AdminSubCategories = async (req, res) => {
         model: Files,
       },
       ],
+      mapToModel: true,
+      nest: true,
+      raw: true,  
       limit,
       offset,
     });
@@ -132,7 +135,7 @@ const AdminSubCategories = async (req, res) => {
         name: subcategory.name,
         slug: subcategory.slug,
         category_id: subcategory.category_id,
-        category_name: subcategory.Categories.name,
+        category: subcategory.category,
         subcategory_image: subcategory.Files?.files_url ? await FileFunctions.getFromS3(subcategory.Files.files_url) : null,
         description: subcategory.description,
         is_active: subcategory.is_active,
@@ -160,7 +163,10 @@ const UserSubCategories = async (req, res) => {
   try {
     const subcategories = await Subcategories.findAll({
       where: { is_active: true }
-      , include: [{ model: Categories }, { model: Files }]
+      , include: [{ model: Categories }, { model: Files }],
+      mapToModel: true,
+      nest: true,
+      raw: true,
     });
 
 
@@ -170,7 +176,7 @@ const UserSubCategories = async (req, res) => {
         name: subcategory.name,
         slug: subcategory.slug,
         category_id: subcategory.category_id,
-        category_name: subcategory.Categories.name,
+        category: subcategory.category,
         subcategory_image: subcategory.Files?.files_url ? await FileFunctions.getFromS3(subcategory.Files.files_url) : null,
         description: subcategory.description,
         is_active: subcategory.is_active,
