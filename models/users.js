@@ -23,6 +23,7 @@ UsersModel.init({
   access_token: DataTypes.STRING,
   refresh_token: DataTypes.STRING,
   profile_image_id: DataTypes.INTEGER,
+  fcm_token: DataTypes.TEXT,
 }, {
   sequelize,
   paranoid: true,

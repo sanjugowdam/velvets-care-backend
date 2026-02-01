@@ -33,7 +33,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       uploaded_by: {
-        type: Sequelize.ENUM
+        type: Sequelize.ENUM('user', 'doctor', 'admin'),
       },
       createdAt: {
         allowNull: false,
@@ -41,6 +41,10 @@ module.exports = {
       },
       updatedAt: {
         allowNull: false,
+        type: Sequelize.DATE
+      },
+      deletedAt: {
+        allowNull: true,
         type: Sequelize.DATE
       }
     });
