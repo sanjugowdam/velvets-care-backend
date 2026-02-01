@@ -27,6 +27,7 @@ module.exports = {
   Orders: require('./order'),
   OrderItems: require('./orderitem'),
   Payments: require('./payment'),
+  Prescriptions: require('./prescription'),
 
   // Notifications: require('./notifications'),
   // SustainabilityScore: require('./sustainability_score'),

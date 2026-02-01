@@ -26,5 +26,6 @@ module.exports = {
     Orders: 'orders',
     OrderItems: 'order_items',
     Payments: 'payments',
+    prescriptions: 'prescriptions'
 
 }
