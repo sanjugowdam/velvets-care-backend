@@ -16,7 +16,6 @@ const createBrandValidator = Joi.object({
 });
 
 const updateBrandValidator = Joi.object({
-    id: Joi.number().integer().required(),
     name: Joi.string().optional(),
     description: Joi.string().allow('', null),
     slug: Joi.string().optional(),

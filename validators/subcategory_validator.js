@@ -19,7 +19,6 @@ const createSubCategoryValidator = Joi.object({
 });
 
 const updateSubCategoryValidator = Joi.object({
-    id: Joi.number().integer().required(),
     name: Joi.string().optional(),
     slug: Joi.string().optional(),
     subcategory_image:Joi.any()
