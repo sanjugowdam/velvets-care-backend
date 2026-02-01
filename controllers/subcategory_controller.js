@@ -1,7 +1,7 @@
 const { Op } = require('sequelize');
 const { Subcategories, Categories, Files } = require('../models');
 const {
-    FileFunctions, JWTFunctions , 
+  FileFunctions, JWTFunctions,
 } = require('../helpers')
 // Create Subcategory
 const CreateSubCategory = async (req, res) => {
@@ -13,20 +13,23 @@ const CreateSubCategory = async (req, res) => {
 
     const existing = await Subcategories.findOne({ where: { name, category_id } });
     if (existing) throw new Error('Subcategory already exists in this category');
-       const uploadedImage = await FileFunctions.uploadToS3(subcategory_image.filename, 'uploads/brands', fs.readFileSync(subcategory_image.path));
-                    const uploaded_files = await Files.create({
-                      files_url: uploadedImage.key,
-                      extension: uploadedImage.key.split('.').pop(),
-                      original_name: uploadedImage.key,
-                      size: fs.statSync(subcategory_image.path).size
-                    });
+    let uploaded_files = null;
+    if (subcategory_image) {
+      const uploadedImage = await FileFunctions.uploadToS3(subcategory_image.filename, 'uploads/subcategories', fs.readFileSync(subcategory_image.path));
+      uploaded_files = await Files.create({
+        files_url: uploadedImage.key,
+        extension: uploadedImage.key.split('.').pop(),
+        original_name: uploadedImage.key,
+        size: fs.statSync(subcategory_image.path).size
+      });
+    }
     const subcategory = await Subcategories.create({
       name,
       slug,
       category_id,
       description: description || null,
       is_active: is_active ?? true,
-      subcategory_image: uploaded_files.id
+      subcategory_image: uploaded_files ? uploaded_files.id : null
     });
 
     return res.response({
@@ -51,16 +54,17 @@ const UpdateSubCategory = async (req, res) => {
 
     const subcategory = await Subcategories.findByPk(subId);
     if (!subcategory) throw new Error('Subcategory not found');
-
- const uploadedImage = await FileFunctions.uploadToS3(subcategory_image.filename, 'uploads/brands', fs.readFileSync(subcategory_image.path));
-              const uploaded_files = await Files.create({
-                files_url: uploadedImage.key,
-                extension: uploadedImage.key.split('.').pop(),
-                original_name: uploadedImage.key,
-                size: fs.statSync(subcategory_image.path).size
-              });
-
-    await subcategory.update({ name, slug, is_active, category_id, description: description || null, subcategory_image: uploaded_files.id });
+    let uploaded_files = null;
+    if (subcategory_image) {
+      const uploadedImage = await FileFunctions.uploadToS3(subcategory_image.filename, 'uploads/subcategories', fs.readFileSync(subcategory_image.path));
+      uploaded_files = await Files.create({
+        files_url: uploadedImage.key,
+        extension: uploadedImage.key.split('.').pop(),
+        original_name: uploadedImage.key,
+        size: fs.statSync(subcategory_image.path).size
+      });
+    }
+    await subcategory.update({ name, slug, is_active, category_id, description: description || null, subcategory_image: uploaded_files ? uploaded_files.id : null });
 
     return res.response({
       success: true,
@@ -112,9 +116,9 @@ const AdminSubCategories = async (req, res) => {
     const subcategories = await Subcategories.findAll({
       where,
       include: [{ model: Categories },
-        {
-          model: Files,
-        },
+      {
+        model: Files,
+      },
       ],
       limit,
       offset,
@@ -152,11 +156,12 @@ const AdminSubCategories = async (req, res) => {
 // User Fetch Subcategories
 const UserSubCategories = async (req, res) => {
   try {
-    const subcategories = await Subcategories.findAll({ 
-      where: { is_active: true } 
-    , include: [{ model: Categories }, { model: Files }] });
+    const subcategories = await Subcategories.findAll({
+      where: { is_active: true }
+      , include: [{ model: Categories }, { model: Files }]
+    });
 
-   
+
     const subcategory_mapped = subcategories.map(async (subcategory) => {
       return {
         id: subcategory.id,

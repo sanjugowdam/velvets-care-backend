@@ -15,19 +15,22 @@ const CreateCategory = async (req, res) => {
 
         const existing = await Categories.findOne({ where: { name } });
         if (existing) throw new Error('Category already exists');
+        let uploaded_files = null;
+        if(category_image) {
            const uploadedImage = await FileFunctions.uploadToS3(category_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
-              const uploaded_files = await Files.create({
+              uploaded_files = await Files.create({
                 files_url: uploadedImage.key,
                 extension: uploadedImage.key.split('.').pop(),
                 original_name: uploadedImage.key,
                 size: fs.statSync(category_image.path).size
               });
+            }
         const category = await Categories.create({
             name,
             description: description || null,
             is_active: is_active ?? true,
             slug,
-            category_image: uploaded_files.id
+            category_image: uploaded_files ? uploaded_files.id : null
         });
 
         return res.response({
@@ -48,24 +51,28 @@ const UpdateCategory = async (req, res) => {
         if (!session_user) throw new Error('Session expired');
 
         const { id } = req.params;
-        const updates = req.payload;
+        const { category_image, ...updates } = req.payload;
 
         const category = await Categories.findOne({ where: { id } });
         if (!category) throw new Error('Category not found');
-           const uploadedImage = await FileFunctions.uploadToS3(category_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
-              const uploaded_files = await Files.create({
+        let uploaded_files = null;
+        if (category_image) {
+            const uploadedImage = await FileFunctions.uploadToS3(category_image.filename, 'uploads/brands', fs.readFileSync(brand_image.path));
+            uploaded_files = await Files.create({
                 files_url: uploadedImage.key,
                 extension: uploadedImage.key.split('.').pop(),
                 original_name: uploadedImage.key,
                 size: fs.statSync(category_image.path).size
               });
-        await category.update({ ...updates, category_image: uploaded_files.id });
+            }
+        await category.update({ ...updates, category_image: uploaded_files ? uploaded_files.id : null });
 
         return res.response({
             success: true,
             message: 'Category updated successfully',
             data: category,
         });
+    
     } catch (error) {
         console.error('Error updating category:', error);
         return res.response({ success: false, message: error.message });
