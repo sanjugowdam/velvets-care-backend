@@ -8,5 +8,6 @@ module.exports = {
     TwilioFunctions: require('./twilio'),
     GoogleAuthFunctions: require('./google_auth'),
     RazorpayFunctions: require('./razorpay'),
-    AgoraFunctions: require('./agora')
+    AgoraFunctions: require('./agora'),
+    PushNotificationFunctions: require('./pushNotification'),
 }

@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+
 const { firebaseAuthClient, FIREBASE_PROJECT_ID } = require('../config/firebaseClient');
 
 class PushNotification {

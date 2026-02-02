@@ -1,4 +1,5 @@
 const { Users, Doctors } = require('../models');
+const { PushNotificationFunctions } = require('../helpers');
 
 const saveFcmToken = async (req, res) => {
     try {
@@ -22,6 +23,36 @@ const saveFcmToken = async (req, res) => {
   return res.response({ success: false, message: error.message }).code(500);
 }
 };
+
+const testNotification = async (req, h) => {
+    try {
+        const session_user = req.headers.user;
+        if (!session_user) {
+            throw new Error('Session expired');
+        }
+        
+        const { fcm_token, title, body } = req.payload;
+
+        const result = await PushNotificationFunctions.pushNotification.send(
+            fcm_token,
+            title || 'Test Notification',
+            body || 'FCM push is working successfully 🚀'
+        );
+
+        return h.response({
+            success: true,
+            result
+        }).code(200);
+
+    } catch (err) {
+        console.error('Error sending test notification:', err);
+        return h.response({
+            success: false,
+            message: err.message
+        }).code(500);
+    }
+};
 module.exports = {
   saveFcmToken,
+    testNotification
 };
