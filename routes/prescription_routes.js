@@ -50,6 +50,18 @@ module.exports = [
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
                 }
+            },
+             payload: {
+                maxBytes: 20 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
+                }
             }
         },
         handler: uploadPrescription
@@ -68,6 +80,18 @@ module.exports = [
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
+                }
+            },
+             payload: {
+                maxBytes: 20 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
                 }
             }
         },
@@ -109,6 +133,18 @@ module.exports = [
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
                 }
+            },
+             payload: {
+                maxBytes: 20 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
+                }
             }
         },
         handler: uploadPrescription
@@ -148,6 +184,18 @@ module.exports = [
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
+                }
+            },
+             payload: {
+                maxBytes: 20 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
                 }
             }
         },
@@ -209,6 +257,18 @@ module.exports = [
                 failAction: (request, h, err) => {
                     const errors = err.details.map(e => e.message);
                     throw Boom.badRequest(errors.join(', '));
+                }
+            },
+             payload: {
+                maxBytes: 20 * 1024 * 1024,
+                parse: true,
+                output: 'file',
+                multipart: true,
+                allow: 'multipart/form-data'
+            },
+            plugins: {
+                'hapi-swagger': {
+                    payloadType: 'form'
                 }
             }
         },
